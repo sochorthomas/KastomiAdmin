@@ -57,21 +57,26 @@ serve(async (req) => {
       throw new Error('Sales channel URL is required')
     }
 
-    // Prepare date range (use defaults if not provided)
-    const fromDate = date_from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    // Prepare date range (if date_from is null, don't send it to show all records)
+    const fromDate = date_from || null
     const toDate = date_to || new Date().toISOString().split('T')[0]
 
     // Prepare modules for BOB API
+    const dashboardData: any = {
+      url: sales_channel_url,
+      to: toDate
+    }
+    // Only add from date if it's provided
+    if (fromDate) {
+      dashboardData.from = fromDate
+    }
+    
     const modules = [
       {
         module: "kastomi",
         method: "salesChannelDashboard",
         key: "get_salesChannelDashboard_" + Date.now(),
-        data: {
-          url: sales_channel_url,
-          from: fromDate,
-          to: toDate
-        }
+        data: dashboardData
       },
       {
         module: "kastomi",

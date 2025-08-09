@@ -101,9 +101,9 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async fetchSalesChannel() {
+    async fetchSalesChannel(forceRefresh = false) {
       try {
-        console.log('Fetching sales channel...')
+        console.log('Fetching sales channel...', forceRefresh ? '(forced refresh)' : '')
         
         // Call the edge function directly to get full response
         const response = await fetch(`${supabase.supabaseUrl}/functions/v1/get-sales-channel`, {
@@ -148,6 +148,11 @@ export const useAuthStore = defineStore('auth', {
         }
         this.salesChannelLoaded = true
       }
+    },
+    
+    async refreshSalesChannel() {
+      // Force refresh the sales channel data
+      await this.fetchSalesChannel(true)
     },
 
     clearUserData() {

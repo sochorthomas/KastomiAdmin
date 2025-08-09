@@ -155,12 +155,10 @@
           v-else
           :value="filteredOrders" 
           :paginator="true" 
-          :rows="20"
-          :rowsPerPageOptions="[10, 20, 50, 100]"
+          :rows="50"
+          :rowsPerPageOptions="[50, 100, 1000]"
           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
           currentPageReportTemplate="Zobrazeno {first} až {last} z {totalRecords} objednávek"
-          :globalFilter="searchQuery"
-          sortMode="multiple"
           removableSort
           class="modern-table"
           stripedRows
@@ -508,6 +506,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
+import { useTableControls } from '@/composables/useTableControls'
 import { 
   mapToSimplifiedStatus, 
   getStatusSeverity, 
@@ -524,17 +523,37 @@ const confirm = useConfirm()
 const loading = ref(false)
 const loadingOrderItems = ref(false)
 const orders = ref([])
-const filteredOrders = ref([])
 const selectedOrder = ref(null)
 const showOrderDialog = ref(false)
 const expandedRows = ref({})
 const orderItemsCache = ref({})
 
 // Filters
-const dateFrom = ref(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+const dateFrom = ref(null)
 const dateTo = ref(new Date())
 const filterStatus = ref('')
-const searchQuery = ref('')
+
+// Table controls for filtering and searching
+const {
+  globalFilter: searchQuery,
+  filters,
+  filteredData: baseFilteredOrders,
+  setFilter,
+  clearAllFilters,
+  toggleSort
+} = useTableControls({
+  data: orders,
+  searchFields: [
+    'club_name',
+    'email', 
+    'buyer_name',
+    'order_number',
+    'total',
+    'internal_notes',
+    'external_notes'
+  ],
+  storageKey: 'orders_table'
+})
 
 // Status options for dropdown using simplified statuses
 const statusOptions = ref([
@@ -578,22 +597,21 @@ const fetchOrders = async () => {
     if (!authStore.salesChannelUrl) {
       console.warn('Sales channel URL not available yet')
       orders.value = []
-      filteredOrders.value = []
       return
     }
 
     const { data, error } = await supabase.functions.invoke('get-orders', {
       body: {
         sales_channel_url: authStore.salesChannelUrl,
-        date_from: dateFrom.value instanceof Date ? dateFrom.value.toISOString().split('T')[0] : dateFrom.value,
+        date_from: dateFrom.value instanceof Date ? dateFrom.value.toISOString().split('T')[0] : dateFrom.value || null,
         date_to: dateTo.value instanceof Date ? dateTo.value.toISOString().split('T')[0] : dateTo.value
       }
     })
     
     if (error) throw error
     
-    orders.value = data.orders || []
-    filterOrders()
+    // Sort orders by ID descending (highest first)
+    orders.value = (data.orders || []).sort((a, b) => b.id - a.id)
     
     // Preload club support data for all orders
     preloadClubSupportData()
@@ -607,7 +625,6 @@ const fetchOrders = async () => {
   } catch (error) {
     console.error('Error fetching orders:', error)
     orders.value = []
-    filteredOrders.value = []
     toast.add({ 
       severity: 'error', 
       summary: 'Chyba', 
@@ -619,34 +636,32 @@ const fetchOrders = async () => {
   }
 }
 
-const filterOrders = () => {
-  let filtered = orders.value
+// Computed property for filtered orders
+const filteredOrders = computed(() => {
+  let filtered = baseFilteredOrders.value
   
   // Apply status filter using the mapping utility
   if (filterStatus.value) {
     filtered = filterOrdersByStatus(filtered, filterStatus.value)
   }
   
-  // Apply search filter
-  if (searchQuery.value) {
-    const search = searchQuery.value.toLowerCase()
+  // Apply date range filter
+  if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter(order => {
-      return (
-        (order.id && order.id.toString().toLowerCase().includes(search)) ||
-        (order.order_number && order.order_number.toString().toLowerCase().includes(search)) ||
-        (order.customer_name && order.customer_name.toLowerCase().includes(search)) ||
-        (order.customer_email && order.customer_email.toLowerCase().includes(search))
-      )
+      const orderDate = new Date(order.created_at)
+      if (dateFrom.value && orderDate < dateFrom.value) return false
+      if (dateTo.value && orderDate > dateTo.value) return false
+      return true
     })
   }
   
-  filteredOrders.value = filtered
-}
+  return filtered
+})
 
 const resetFilters = () => {
   filterStatus.value = ''
   searchQuery.value = ''
-  filterOrders()
+  clearAllFilters()
 }
 
 const formatDate = (date) => {

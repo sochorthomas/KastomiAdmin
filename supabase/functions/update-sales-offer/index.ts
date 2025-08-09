@@ -39,15 +39,15 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { id, wholesale_price, klub_price, text, active, sales_channel_url } = await req.json()
+    const { id, wholesale_price, klub_price, text, active, sales_channel_url, status } = await req.json()
     
-    console.log('Update request received:', { id, wholesale_price, klub_price, text, active, sales_channel_url })
+    console.log('Update request received:', { id, wholesale_price, klub_price, text, active, status, sales_channel_url })
     
     if (!id) {
       throw new Error('Sales offer ID is required')
     }
 
-    // Calculate final price
+    // Always calculate final price for BOB API
     const price = Number(wholesale_price || 0) + Number(klub_price || 0)
     
     console.log('Calculated price:', price)
@@ -77,7 +77,7 @@ serve(async (req) => {
           id: id,
           price: price,
           text: text || '',
-          active: active ? 1 : 0,
+          active: active !== undefined ? Number(active) : 1,
           url: sales_channel_url || ''
         }
       }

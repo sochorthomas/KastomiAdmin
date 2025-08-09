@@ -55,6 +55,15 @@
                 />
               </IconField>
             </div>
+            <Select 
+              v-model="activeFilter"
+              :options="activeFilterOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Všechny produkty"
+              @change="handleActiveFilterChange"
+              class="active-filter-dropdown"
+            />
             <Button 
               @click="fetchProducts" 
               :loading="loading"
@@ -98,15 +107,15 @@
         <!-- Products Table -->
         <DataTable 
           v-else
-          :value="offers" 
+          :value="filteredOffers" 
           :paginator="true" 
-          :rows="10"
-          :rowsPerPageOptions="[10, 20, 50]"
+          :rows="50"
+          :rowsPerPageOptions="[50, 100, 1000]"
           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
           currentPageReportTemplate="Zobrazeno {first} až {last} z {totalRecords} produktů"
-          :globalFilter="globalFilter"
-          :globalFilterFields="['name', 'seo', 'id']"
-          sortMode="multiple"
+          :sortField="sortField"
+          :sortOrder="sortOrder"
+          @sort="onSort"
           removableSort
           class="modern-table"
           stripedRows
@@ -119,10 +128,23 @@
           
           <Column field="name" header="Název produktu" sortable>
             <template #body="{ data }">
-              <div class="product-info">
-                <div class="product-name">{{ data.name }}</div>
-                <div v-if="data.seo" class="product-seo">
-                  {{ data.seo }}
+              <div class="product-info-with-image">
+                <div class="product-thumbnail-wrapper">
+                  <img 
+                    v-if="data.variants?.[0]?.variant_image" 
+                    :src="data.variants[0].variant_image.startsWith('http') ? data.variants[0].variant_image : `https://cdn.kastomi.com/files/${data.variants[0].variant_image}`" 
+                    :alt="data.name"
+                    class="product-thumbnail"
+                  />
+                  <div v-else class="product-thumbnail-placeholder">
+                    <i class="pi pi-image"></i>
+                  </div>
+                </div>
+                <div class="product-info">
+                  <div class="product-name">{{ data.name }}</div>
+                  <div v-if="data.seo" class="product-seo">
+                    {{ data.seo }}
+                  </div>
                 </div>
               </div>
             </template>
@@ -158,6 +180,15 @@
                       <div v-for="(variant, idx) in data.variants" 
                            :key="idx" 
                            class="variant-hover-item">
+                        <img 
+                          v-if="variant.variant_image" 
+                          :src="variant.variant_image.startsWith('http') ? variant.variant_image : `https://cdn.kastomi.com/files/${variant.variant_image}`" 
+                          :alt="variant.variant_name || variant.name"
+                          class="variant-hover-image"
+                        />
+                        <div v-else class="variant-hover-image-placeholder">
+                          <i class="pi pi-image"></i>
+                        </div>
                         <span class="variant-name-col">{{ variant.variant_name || variant.name || 'Bez názvu' }}</span>
                         <span class="variant-params-col">
                           <span v-if="variant.size" class="variant-hover-size">{{ variant.size }}</span>
@@ -179,15 +210,26 @@
             </template>
           </Column>
           
+          <Column field="_isActive" header="Aktivní" sortable style="width: 100px">
+            <template #body="{ data }">
+              <span 
+                class="active-badge"
+                :class="data._isActive ? 'active-yes' : 'active-no'"
+              >
+                {{ data._isActive ? 'ANO' : 'NE' }}
+              </span>
+            </template>
+          </Column>
+          
           <Column field="wholesale_price" header="VO cena" sortable style="width: 110px">
             <template #body="{ data }">
               <span class="price-cell">{{ formatCurrency(data.wholesale_price || 0) }}</span>
             </template>
           </Column>
           
-          <Column field="klub_price" header="Klub podpora" sortable style="width: 120px">
+          <Column field="_klubPrice" header="Klub podpora" sortable style="width: 120px">
             <template #body="{ data }">
-              <span class="price-cell">{{ formatCurrency(calculateKlubPrice(data)) }}</span>
+              <span class="price-cell">{{ formatCurrency(data._klubPrice) }}</span>
             </template>
           </Column>
           
@@ -197,17 +239,26 @@
             </template>
           </Column>
           
-          <Column header="Akce" style="width: 60px" bodyClass="text-center">
+          <Column header="Akce" style="width: 120px" bodyClass="text-center">
             <template #body="{ data }">
-              <Button 
-                @click="showProductDetail(data)"
-                icon="pi pi-eye"
-                severity="primary"
-                text
-                rounded
-                v-tooltip.left="'Moderní detail'"
-                class="mr-1"
-              />
+              <div class="action-buttons-inline">
+                <a 
+                  v-if="data.seo && authStore.salesChannelUrl"
+                  :href="`https://${extractDomain(authStore.salesChannelUrl)}/nabidka/produkt/${data.seo}`"
+                  target="_blank"
+                  class="action-button"
+                  v-tooltip.top="'Zobrazit na webu'"
+                >
+                  <i class="pi pi-external-link"></i>
+                </a>
+                <button 
+                  @click="showProductDetail(data)"
+                  class="action-button"
+                  v-tooltip.top="'Detail produktu'"
+                >
+                  <i class="pi pi-eye"></i>
+                </button>
+              </div>
               
             </template>
           </Column>
@@ -298,8 +349,8 @@
                 <template #body="{ data }">
                   <div class="variant-info">
                     <img 
-                      v-if="data.image" 
-                      :src="data.image" 
+                      v-if="data.variant_image" 
+                      :src="data.variant_image.startsWith('http') ? data.variant_image : `https://cdn.kastomi.com/files/${data.variant_image}`" 
                       :alt="data.name"
                       class="variant-image"
                     >
@@ -447,12 +498,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import Chip from 'primevue/chip'
+import Select from 'primevue/select'
 import ProductDetailDialog from '@/components/ProductDetailDialog.vue'
+import { sortVariantsInOffers } from '@/utils/variantSorting'
+import { useTableControls } from '@/composables/useTableControls'
 
 const authStore = useAuthStore()
 const toast = useToast()
@@ -466,11 +520,63 @@ const editingPrices = ref(false)
 const variantPrices = ref({})
 const savingPrices = ref(false)
 const productText = ref('')
-const globalFilter = ref('')
 const showDetailDialog = ref(false)
 const selectedProduct = ref(null)
 const hoveredVariantId = ref(null)
 const hoverCardPosition = ref({ top: 0, left: 0 })
+
+// Active filter state
+const activeFilter = ref(null)
+const activeFilterOptions = [
+  { label: 'Všechny produkty', value: null },
+  { label: 'Aktivní', value: true },
+  { label: 'Neaktivní', value: false }
+]
+
+// Helper functions (defined before use in computed)
+const calculateKlubPrice = (offer) => {
+  const wholesale = offer.wholesale_price || 0
+  const final = offer.price || 0
+  return final - wholesale
+}
+
+// Helper function to determine if a product is active
+// Product is active only if BOTH Kastomi status is active (1) AND channel is active (1)
+const isProductActive = (product) => {
+  const kastomiStatus = product.sales_offer_status_id || 1
+  const channelActive = Number(product.active_channel)
+  
+  // Kastomi status: 1 = Active, 2 = Active but can't buy, 3 = Inactive, 4 = Hide
+  // Product is considered active only if Kastomi status is 1 (Active) AND channel is active
+  return kastomiStatus === 1 && channelActive === 1
+}
+
+// Table controls for filtering and searching
+// Add computed property for offers with active status and klub price
+const offersWithActiveStatus = computed(() => {
+  return offers.value.map(offer => ({
+    ...offer,
+    _isActive: isProductActive(offer), // Add computed active status
+    _klubPrice: calculateKlubPrice(offer) // Add computed klub price for sorting
+  }))
+})
+
+const {
+  globalFilter,
+  filters,
+  sortField,
+  sortOrder,
+  filteredData: filteredOffers,
+  setFilter,
+  clearFilter,
+  clearAllFilters,
+  toggleSort,
+  getUniqueValues
+} = useTableControls({
+  data: offersWithActiveStatus,
+  searchFields: ['name', 'sales_offer_name', 'seo', 'variants.name', 'variants.variant_name'],
+  storageKey: 'products_table'
+})
 
 // Computed
 const showOfferDialog = computed({
@@ -495,13 +601,32 @@ const totalVariants = computed(() => {
 })
 
 const activeProducts = computed(() => {
-  return offers.value.filter(offer => {
-    if (!offer.variants) return true
-    return offer.variants.some(v => v.active)
-  }).length
+  return offers.value.filter(offer => isProductActive(offer)).length
 })
 
+// Handle active filter change
+const handleActiveFilterChange = () => {
+  if (activeFilter.value === null) {
+    clearFilter('_isActive')
+  } else {
+    setFilter('_isActive', activeFilter.value)
+  }
+}
+
+// Handle sorting
+const onSort = (event) => {
+  sortField.value = event.sortField
+  sortOrder.value = event.sortOrder
+}
+
 // Methods
+const extractDomain = (url) => {
+  if (!url) return ''
+  // Remove protocol and any path after the domain
+  const match = url.match(/(?:https?:\/\/)?(?:localhost:\d+\/)?([^\/]+)/i)
+  return match ? match[1] : url
+}
+
 const fetchProducts = async () => {
   loading.value = true
   error.value = null
@@ -521,7 +646,22 @@ const fetchProducts = async () => {
     
     if (fetchError) throw fetchError
     
-    offers.value = data.offers || []
+    // Sort offers by ID descending (highest first) and sort variants within each offer
+    const sortedOffers = (data.offers || []).sort((a, b) => b.id - a.id)
+    offers.value = sortVariantsInOffers(sortedOffers)
+    
+    // Debug: Log first product with image
+    const firstWithImage = offers.value.find(o => o.variants?.[0]?.variant_image)
+    if (firstWithImage) {
+      console.log('First product with image received in frontend:', {
+        id: firstWithImage.id,
+        name: firstWithImage.name,
+        variantImage: firstWithImage.variants[0].variant_image,
+        fullImageUrl: firstWithImage.variants[0].variant_image.startsWith('http') 
+          ? firstWithImage.variants[0].variant_image 
+          : `https://cdn.kastomi.com/files/${firstWithImage.variants[0].variant_image}`
+      })
+    }
   } catch (err) {
     console.error('Error fetching sales offers:', err)
     error.value = err.message || 'Chyba při načítání produktů'
@@ -537,12 +677,6 @@ const formatCurrency = (value) => {
     currency: 'CZK',
     minimumFractionDigits: 0
   }).format(value)
-}
-
-const calculateKlubPrice = (offer) => {
-  const wholesale = offer.wholesale_price || 0
-  const final = offer.price || 0
-  return final - wholesale
 }
 
 
@@ -584,10 +718,17 @@ const getHoverCardPosition = () => {
 }
 
 const showProductDetail = (offer) => {
+  
   // Transform the offer data to match the ProductDetailDialog expected format
   const wholesale = offer.wholesale_price || 0
   const final = offer.price || 0
-  const klubPrice = final - wholesale
+  const klubPrice = offer._klubPrice !== undefined ? offer._klubPrice : (final - wholesale)
+  
+  // Use first variant's image as default, with CDN URL handling
+  const firstVariantImage = offer.variants?.[0]?.variant_image || null
+  const imageWithCdn = firstVariantImage && !firstVariantImage.startsWith('http') 
+    ? `https://cdn.kastomi.com/files/${firstVariantImage}` 
+    : firstVariantImage
   
   selectedProduct.value = {
     id: `${offer.id}-0`, // Create a composite ID
@@ -599,10 +740,11 @@ const showProductDetail = (offer) => {
     wholesale_price: wholesale,
     club_support: klubPrice,
     final_price: final,
-    status: offer.variants?.some(v => v.active) ? 1 : 0,
+    active: offer.active_channel !== undefined ? offer.active_channel : offer.active, // Use active_channel for club-specific status
+    status: offer.sales_offer_status_id || 1, // Keep the actual status field
     description: offer.sales_offer_text || offer.text || '',
-    image: offer.variants?.[0]?.image || null,
-    // Include original offer data for reference
+    image: imageWithCdn,
+    // Include original offer data with all variants for the dialog
     _originalOffer: offer
   }
   showDetailDialog.value = true
@@ -610,13 +752,28 @@ const showProductDetail = (offer) => {
 
 const handleProductUpdate = (updatedProduct) => {
   // Update the offer in the local state
-  const offerIndex = offers.value.findIndex(o => o.id === updatedProduct._originalOffer?.id)
+  const offerIndex = offers.value.findIndex(o => o.id === updatedProduct._originalOffer?.id || o.id === updatedProduct.id.split('-')[0])
   if (offerIndex !== -1) {
+    // Update the offer with new values
     offers.value[offerIndex] = {
       ...offers.value[offerIndex],
       wholesale_price: updatedProduct.wholesale_price,
-      price: updatedProduct.final_price,
-      sales_offer_text: updatedProduct.description
+      klub_price: updatedProduct.club_support,
+      price: updatedProduct.wholesale_price + updatedProduct.club_support, // Calculate final price
+      sales_offer_text: updatedProduct.description,
+      active: updatedProduct.active,
+      active_channel: updatedProduct.active, // When updating, set both fields to the new value
+      sales_offer_status_id: updatedProduct.status
+    }
+    
+    // Also update the variants array if it exists
+    if (offers.value[offerIndex].variants) {
+      offers.value[offerIndex].variants = offers.value[offerIndex].variants.map(v => ({
+        ...v,
+        wholesale_price: updatedProduct.wholesale_price,
+        klub_price: updatedProduct.club_support,
+        price: updatedProduct.wholesale_price + updatedProduct.club_support
+      }))
     }
   }
 }
@@ -706,9 +863,25 @@ const savePrices = async () => {
   }
 }
 
+// Watch for salesChannelUrl changes and refetch products
+watch(() => authStore.salesChannelUrl, (newUrl, oldUrl) => {
+  if (newUrl && newUrl !== oldUrl) {
+    console.log('Sales channel URL changed from', oldUrl, 'to', newUrl, '- refetching products')
+    fetchProducts()
+  }
+})
+
+// Watch for filter changes to sync with dropdown
+watch(() => filters.value._isActive, (newValue) => {
+  activeFilter.value = newValue === undefined ? null : newValue
+}, { immediate: true })
+
 // Lifecycle
 onMounted(() => {
-  fetchProducts()
+  // Only fetch if we have a salesChannelUrl
+  if (authStore.salesChannelUrl) {
+    fetchProducts()
+  }
 })
 </script>
 
@@ -825,6 +998,12 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
+.active-filter-dropdown {
+  height: 2.25rem;
+  min-width: 150px;
+  font-size: 0.875rem;
+}
+
 .refresh-button {
   height: 2.25rem;
   padding: 0 0.75rem;
@@ -873,21 +1052,63 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
+.product-info-with-image {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.product-thumbnail-wrapper {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.product-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+.product-thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d1d5db;
+  font-size: 1.25rem;
+}
+
 .product-info {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .product-name {
   font-weight: 600;
   color: #111827;
   font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-seo {
   font-size: 0.75rem;
   color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .price-cell {
@@ -899,6 +1120,39 @@ onMounted(() => {
   font-weight: 700;
   color: #111827;
   font-size: 0.875rem;
+}
+
+.action-buttons-inline {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #6b7280;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.action-button:hover {
+  background: #f3f4f6;
+  color: #0084ff;
+  border-color: #0084ff;
+  transform: translateY(-2px);
+}
+
+.action-button i {
+  font-size: 14px;
 }
 
 /* Variant Tag and Hover Card */
@@ -992,6 +1246,7 @@ onMounted(() => {
 .variant-hover-item {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 10px 16px;
   font-size: 0.8125rem;
   color: #374151;
@@ -1005,6 +1260,30 @@ onMounted(() => {
 
 .variant-hover-item:last-child {
   border-bottom: none;
+}
+
+.variant-hover-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  flex-shrink: 0;
+}
+
+.variant-hover-image-placeholder {
+  width: 32px;
+  height: 32px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d1d5db;
+  font-size: 0.875rem;
+  flex-shrink: 0;
 }
 
 .variant-name-col {
@@ -1080,6 +1359,32 @@ onMounted(() => {
 .variant-detail-link:hover {
   background: #eff6ff;
   color: #2563eb;
+}
+
+/* Active Badge Styling */
+.active-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 45px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  transition: all 0.2s;
+}
+
+.active-badge.active-yes {
+  background: #dcfce7;
+  color: #14532d;
+  border: 1px solid #86efac;
+}
+
+.active-badge.active-no {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
 }
 
 .variant-detail-link i {

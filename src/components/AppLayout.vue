@@ -1,5 +1,5 @@
 <template>
-  <div class="layout-wrapper">
+  <div class="layout-wrapper" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
     <!-- Toast notifications -->
     <Toast position="top-right" />
     <ConfirmDialog />
@@ -78,10 +78,14 @@
     <!-- Desktop Layout -->
     <div class="layout-container">
       <!-- Desktop Sidebar -->
-      <div class="layout-sidebar">
+      <div class="layout-sidebar" :class="{ 'collapsed': sidebarCollapsed }">
         <!-- Kastomi Brand Header -->
         <div class="sidebar-brand-header">
-          <img src="/src/assets/Kastomi_05_powered.svg" alt="Kastomi" class="brand-logo" />
+          <img v-if="!sidebarCollapsed" src="/src/assets/Kastomi_05_powered.svg" alt="Kastomi" class="brand-logo" />
+          <img v-else src="/src/assets/Kastomi_03_bez textu.svg" alt="Kastomi" class="brand-logo" />
+          <button @click="toggleSidebar" class="sidebar-toggle-btn">
+            <i :class="sidebarCollapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'"></i>
+          </button>
         </div>
 
         <div class="sidebar-content">
@@ -98,8 +102,8 @@
                 <i class="pi pi-building"></i>
               </div>
             </div>
-            <h3 class="club-name-title">{{ clubName }}</h3>
-            <div class="club-url-wrapper">
+            <h3 v-if="!sidebarCollapsed" class="club-name-title">{{ clubName }}</h3>
+            <div v-if="!sidebarCollapsed" class="club-url-wrapper">
               <span class="club-url-text">{{ salesChannelUrl || 'Není nakonfigurován' }}</span>
               <a v-if="salesChannelUrl" 
                  :href="`https://${salesChannelUrl}`" 
@@ -109,6 +113,13 @@
                 <i class="pi pi-external-link"></i>
               </a>
             </div>
+            <a v-if="sidebarCollapsed && salesChannelUrl" 
+               :href="`https://${salesChannelUrl}`" 
+               target="_blank" 
+               class="club-url-link-collapsed"
+               v-tooltip.right="`${clubName} - ${salesChannelUrl}`">
+              <i class="pi pi-external-link"></i>
+            </a>
           </div>
 
           <!-- Club Info Section -->
@@ -134,7 +145,7 @@
 
           <!-- Navigation Menu -->
           <div class="navigation-menu">
-            <div class="menu-section-label">HLAVNÍ MENU</div>
+            <div v-if="!sidebarCollapsed" class="menu-section-label">HLAVNÍ MENU</div>
             <div class="menu-items-wrapper">
               <template v-for="item in menuItems" :key="item.label">
                 <!-- Internal route -->
@@ -146,11 +157,12 @@
                 >
                   <a @click="navigate" 
                      class="menu-item" 
-                     :class="{ 'menu-item-active': isActive }">
+                     :class="{ 'menu-item-active': isActive, 'menu-item-collapsed': sidebarCollapsed }"
+                     v-tooltip.right="sidebarCollapsed ? item.label : null">
                     <div class="menu-item-content">
                       <span :class="item.icon" class="menu-item-icon" />
-                      <span class="menu-item-label">{{ item.label }}</span>
-                      <Badge v-if="item.badge" :value="item.badge" :severity="item.badgeSeverity" class="menu-item-badge" />
+                      <span v-if="!sidebarCollapsed" class="menu-item-label">{{ item.label }}</span>
+                      <Badge v-if="item.badge && !sidebarCollapsed" :value="item.badge" :severity="item.badgeSeverity" class="menu-item-badge" />
                     </div>
                     <div v-if="isActive" class="menu-item-indicator"></div>
                   </a>
@@ -159,11 +171,13 @@
                 <a v-else-if="item.url" 
                    :href="item.url" 
                    :target="item.external ? '_blank' : '_self'"
-                   class="menu-item">
+                   class="menu-item"
+                   :class="{ 'menu-item-collapsed': sidebarCollapsed }"
+                   v-tooltip.right="sidebarCollapsed ? item.label : null">
                   <div class="menu-item-content">
                     <span :class="item.icon" class="menu-item-icon" />
-                    <span class="menu-item-label">{{ item.label }}</span>
-                    <span v-if="item.external" class="pi pi-external-link ml-auto text-xs opacity-60"></span>
+                    <span v-if="!sidebarCollapsed" class="menu-item-label">{{ item.label }}</span>
+                    <span v-if="item.external && !sidebarCollapsed" class="pi pi-external-link ml-auto text-xs opacity-60"></span>
                   </div>
                 </a>
               </template>
@@ -173,12 +187,13 @@
           <!-- User Section at Bottom -->
           <div class="sidebar-user-section">
             <div class="user-divider"></div>
-            <div class="user-info-compact">
+            <div class="user-info-compact" :class="{ 'collapsed': sidebarCollapsed }">
               <Avatar :label="userInitials" 
                       shape="circle" 
                       size="normal"
-                      style="background: linear-gradient(135deg, #0084ff 0%, #1e3a8a 100%); color: white" />
-              <div class="user-text">
+                      style="background: linear-gradient(135deg, #0084ff 0%, #1e3a8a 100%); color: white"
+                      v-tooltip.right="sidebarCollapsed ? userEmail : null" />
+              <div v-if="!sidebarCollapsed" class="user-text">
                 <div class="user-email-text">{{ userEmail }}</div>
                 <div class="user-role-text">Administrator</div>
               </div>
@@ -233,13 +248,13 @@
         </div>
 
         <!-- Page Header -->
-        <div class="page-header">
+        <div v-if="route.name === 'Dashboard'" class="page-header">
           <div class="page-header-content">
             <div class="page-header-text">
               <h1 class="page-title">{{ pageTitle }}</h1>
               <p v-if="pageDescription" class="page-description">{{ pageDescription }}</p>
             </div>
-            <div v-if="route.name === 'Dashboard'" class="page-header-actions">
+            <div  class="page-header-actions">
               <div class="date-filter-group">
                 <div class="date-input-group">
                   <label class="date-label">Od:</label>
@@ -295,40 +310,59 @@ const confirm = useConfirm()
 
 // Refs
 const sidebarVisible = ref(false)
+const sidebarCollapsed = ref(false)
 const userMenuRef = ref()
-const dateFrom = ref(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+const dateFrom = ref(null)
 const dateTo = ref(new Date())
 const dashboardLoading = ref(false)
+const dresyCount = ref(0)
 
 // Menu items
-const menuItems = ref([
-  {
-    label: 'Přehled',
-    icon: 'pi pi-fw pi-home',
-    route: '/prehled'
-  },
-  {
-    label: 'Produkty',
-    icon: 'pi pi-fw pi-box',
-    route: '/produkty'
-  },
-  {
-    label: 'Objednávky',
-    icon: 'pi pi-fw pi-shopping-cart',
-    route: '/objednavky'
-  },
-  {
-    label: 'Dresy',
-    icon: 'pi pi-fw pi-tag',
-    route: '/dresy'
-  },
-  {
+const menuItems = computed(() => {
+  const items = [
+    {
+      label: 'Přehled',
+      icon: 'pi pi-fw pi-home',
+      route: '/prehled'
+    },
+    {
+      label: 'Produkty',
+      icon: 'pi pi-fw pi-box',
+      route: '/produkty'
+    },
+    {
+      label: 'Objednávky',
+      icon: 'pi pi-fw pi-shopping-cart',
+      route: '/objednavky'
+    }
+  ]
+  
+  // Only show Dresy if there are records
+  if (dresyCount.value > 0) {
+    items.push({
+      label: 'Dresy',
+      icon: 'pi pi-fw pi-tag',
+      route: '/dresy'
+    })
+  }
+  
+  
+  items.push({
     label: 'StanApp',
     icon: 'pi pi-fw pi-money-bill',
     url: 'https://kastomi.com/stanapp',
     external: true
-  }
-])
+  })
+  
+  // Add external links
+  items.push({
+    label: 'Service Desk',
+    icon: 'pi pi-fw pi-headphones',
+    url: 'https://servicedesk.kastomi.com/tickets-view?offset=0',
+    external: true
+  })
+  return items
+})
 
 // Breadcrumb items
 const breadcrumbItems = computed(() => {
@@ -410,6 +444,12 @@ const userMenuItems = computed(() => [
 ])
 
 // Methods
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  // Save preference to localStorage
+  localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value.toString())
+}
+
 const handleLogout = () => {
   confirm.require({
     message: 'Opravdu se chcete odhlásit?',
@@ -503,6 +543,27 @@ const updateBrowserFavicon = (faviconUrl) => {
 // Refresh dashboard is now handled by handleDateChange
 
 // Fetch sales channel data to get logo
+const checkDresyCount = async () => {
+  try {
+    if (!authStore.salesChannelUrl) return
+    
+    // Call edge function to get dresy count
+    const { data, error } = await supabase.functions.invoke('get-dresy-count', {
+      body: {
+        sales_channel_url: authStore.salesChannelUrl
+      }
+    })
+    
+    if (!error && data) {
+      dresyCount.value = data.count || 0
+    }
+  } catch (err) {
+    console.log('Could not fetch dresy count:', err)
+    // Don't show error to user, just hide the menu item
+    dresyCount.value = 0
+  }
+}
+
 const fetchSalesChannelData = async () => {
   try {
     console.log('Fetching sales channel data for:', authStore.salesChannelUrl)
@@ -585,11 +646,19 @@ watch([dateFrom, dateTo], () => {
 // Fetch club logo on mount
 onMounted(() => {
   fetchSalesChannelData()
+  checkDresyCount()
+  
+  // Restore sidebar state from localStorage
+  const savedState = localStorage.getItem('sidebarCollapsed')
+  if (savedState !== null) {
+    sidebarCollapsed.value = savedState === 'true'
+  }
 })
 
 // Watch for sales channel URL changes
 watch(() => authStore.salesChannelUrl, () => {
   fetchSalesChannelData()
+  checkDresyCount()
 })
 </script>
 
@@ -621,6 +690,11 @@ watch(() => authStore.salesChannelUrl, () => {
   display: none;
   border-right: 1px solid #e5e7eb;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+  transition: width 0.3s ease;
+}
+
+.layout-sidebar.collapsed {
+  width: 70px;
 }
 
 @media (min-width: 1024px) {
@@ -640,6 +714,7 @@ watch(() => authStore.salesChannelUrl, () => {
   align-items: center;
   justify-content: center;
   background: white;
+  position: relative;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -650,6 +725,40 @@ watch(() => authStore.salesChannelUrl, () => {
   width: auto;
   max-width: 80%;
   object-fit: contain;
+}
+
+.collapsed .brand-logo {
+  height: 28px;
+  width: 28px;
+  object-fit: contain;
+}
+
+.sidebar-toggle-btn {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 20;
+}
+
+.sidebar-toggle-btn:hover {
+  background: #f3f4f6;
+  border-color: #0084ff;
+  color: #0084ff;
+}
+
+.sidebar-toggle-btn i {
+  font-size: 12px;
 }
 
 .sidebar-content {
@@ -669,10 +778,17 @@ watch(() => authStore.salesChannelUrl, () => {
 }
 
 .club-logo-container {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   margin: 0 auto 0.75rem;
   position: relative;
+  transition: all 0.3s ease;
+}
+
+.collapsed .club-logo-container {
+  width: 35px;
+  height: 35px;
+  margin: 0 auto 0.5rem;
 }
 
 .club-logo {
@@ -682,7 +798,6 @@ watch(() => authStore.salesChannelUrl, () => {
   border-radius: 12px;
   background: white;
   padding: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .club-logo-placeholder {
@@ -741,6 +856,20 @@ watch(() => authStore.salesChannelUrl, () => {
 
 .club-url-link:hover {
   background: #eff6ff;
+  color: #2563eb;
+  transform: scale(1.1);
+}
+
+.club-url-link-collapsed {
+  display: block;
+  text-align: center;
+  padding: 0.5rem;
+  color: #3b82f6;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.club-url-link-collapsed:hover {
   color: #2563eb;
   transform: scale(1.1);
 }
@@ -843,6 +972,7 @@ watch(() => authStore.salesChannelUrl, () => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+
 }
 
 .menu-section-label {
@@ -900,6 +1030,20 @@ watch(() => authStore.salesChannelUrl, () => {
   background: linear-gradient(135deg, #0084ff 0%, #1e3a8a 100%);
   color: white !important;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.menu-item-collapsed {
+  justify-content: center;
+  padding: 0.6rem 0.5rem;
+}
+
+.menu-item-collapsed .menu-item-content {
+  justify-content: center;
+}
+
+.menu-item-collapsed .menu-item-icon {
+  margin-right: 0;
+  font-size: 1rem;
 }
 
 .menu-item-active:hover {
@@ -964,6 +1108,11 @@ watch(() => authStore.salesChannelUrl, () => {
   .layout-main {
     margin-left: 220px;
     width: calc(100% - 220px);
+  }
+  
+  .sidebar-collapsed .layout-main {
+    margin-left: 70px;
+    width: calc(100% - 70px);
   }
 }
 
@@ -1238,6 +1387,22 @@ watch(() => authStore.salesChannelUrl, () => {
 
 .user-info-compact:hover {
   background: #f3f4f6;
+}
+
+.user-info-compact.collapsed {
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.user-info-compact.collapsed .logout-btn-compact {
+  margin: 0;
+}
+
+.user-info-compact.collapsed .p-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 0.875rem !important;
 }
 
 .user-text {

@@ -59,17 +59,7 @@
         Rychlé akce
       </h3>
       <div class="action-cards-grid">
-        <!-- New Order Card -->
-        <div class="action-card" @click="$router.push('/objednavky')">
-          <div class="action-card-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);">
-            <i class="pi pi-plus-circle"></i>
-          </div>
-          <div class="action-card-content">
-            <h4 class="action-card-title">Nová objednávka</h4>
-            <p class="action-card-description">Vytvořit novou objednávku</p>
-          </div>
-          <i class="pi pi-angle-right action-card-arrow"></i>
-        </div>
+       
 
         <!-- Products Management Card -->
         <div class="action-card" @click="$router.push('/produkty')">
@@ -77,59 +67,26 @@
             <i class="pi pi-box"></i>
           </div>
           <div class="action-card-content">
-            <h4 class="action-card-title">Správa produktů</h4>
-            <p class="action-card-description">Upravit produkty a ceny</p>
+            <h4 class="action-card-title">Přehled produktů</h4>
+            <p class="action-card-description">Jaké produkty máte na fanshopu</p>
+          </div>
+          <i class="pi pi-angle-right action-card-arrow"></i>
+        </div>
+        <!-- Products Management Card -->
+        <div class="action-card" @click="$router.push('/objednavky')">
+          <div class="action-card-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);">
+            <i class="pi pi-shopping-cart"></i>
+          </div>
+          <div class="action-card-content">
+            <h4 class="action-card-title">Přehled objednávek</h4>
+            <p class="action-card-description">Historie objednávek</p>
           </div>
           <i class="pi pi-angle-right action-card-arrow"></i>
         </div>
 
-        <!-- View Reports Card -->
-        <div class="action-card" @click="handleReports">
-          <div class="action-card-icon" style="background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);">
-            <i class="pi pi-chart-bar"></i>
-          </div>
-          <div class="action-card-content">
-            <h4 class="action-card-title">Zobrazit reporty</h4>
-            <p class="action-card-description">Analýzy a statistiky</p>
-          </div>
-          <i class="pi pi-angle-right action-card-arrow"></i>
-        </div>
 
-        <!-- Sync Data Card -->
-        <div class="action-card" @click="handleSync">
-          <div class="action-card-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
-            <i class="pi pi-sync"></i>
-          </div>
-          <div class="action-card-content">
-            <h4 class="action-card-title">Synchronizovat data</h4>
-            <p class="action-card-description">Aktualizovat z BOB</p>
-          </div>
-          <i class="pi pi-angle-right action-card-arrow"></i>
-        </div>
 
-        <!-- Export Data Card -->
-        <div class="action-card" @click="handleExport">
-          <div class="action-card-icon" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">
-            <i class="pi pi-download"></i>
-          </div>
-          <div class="action-card-content">
-            <h4 class="action-card-title">Export dat</h4>
-            <p class="action-card-description">Stáhnout CSV/Excel</p>
-          </div>
-          <i class="pi pi-angle-right action-card-arrow"></i>
-        </div>
 
-        <!-- Settings Card -->
-        <div class="action-card" @click="handleSettings">
-          <div class="action-card-icon" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);">
-            <i class="pi pi-cog"></i>
-          </div>
-          <div class="action-card-content">
-            <h4 class="action-card-title">Nastavení</h4>
-            <p class="action-card-description">Konfigurace systému</p>
-          </div>
-          <i class="pi pi-angle-right action-card-arrow"></i>
-        </div>
       </div>
     </div>
 
@@ -265,7 +222,7 @@ const toast = useToast()
 
 // State
 const loading = ref(false)
-const dateFrom = ref(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+const dateFrom = ref(null)
 const dateTo = ref(new Date())
 
 const stats = ref({
@@ -344,7 +301,7 @@ const fetchDashboardData = async () => {
     
     const { data, error } = await supabase.functions.invoke('dashboard-stats', {
       body: {
-        date_from: formattedDateFrom,
+        date_from: formattedDateFrom || null,
         date_to: formattedDateTo,
         sales_channel_url: authStore.salesChannelUrl
       }

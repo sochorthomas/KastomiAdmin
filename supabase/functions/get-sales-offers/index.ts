@@ -7,24 +7,47 @@ const corsHeaders = {
 }
 
 // Helper function to aggregate variants by offer
-function aggregateVariantsByOffer(variants) {
+function aggregateVariantsByOffer(items) {
   const offersMap = {}
   
-  for (const v of variants) {
-    const offerId = v.sales_offer_id
+  for (const item of items) {
+    // Handle both report structure and salesOffer module structure
+    const offerId = item.sales_offer_id || item.id
+    const offerName = item.sales_offer_name || item.name
+    
     if (!offersMap[offerId]) {
       offersMap[offerId] = {
-        id: v.sales_offer_id,
-        sales_offer_id: v.sales_offer_id,
-        sales_offer_name: v.sales_offer_name,
-        sales_offer_text: v.sales_offer_text,
-        seo: v.seo,
-        wholesale_price: v.wholesale_price,
-        price: v.price,
+        id: offerId,
+        sales_offer_id: offerId,
+        sales_offer_name: offerName,
+        sales_offer_text: item.sales_offer_text || item.text || '',
+        seo: item.seo,
+        wholesale_price: item.wholesale_price,
+        price: item.price,
+        active_channel: item.active_channel,
+        active: item.active,
+        sales_offer_status_id: item.sales_offer_status_id,
         variants: []
       }
     }
-    offersMap[offerId].variants.push(v)
+    
+    // Add variant info
+    offersMap[offerId].variants.push({
+      variant_id: item.variant_id || item.id,
+      variant: item.variant || item.variant_name || '',
+      variant_size: item.variant_size || item.size || '',
+      variant_color: item.variant_color || item.color || '',
+      variant_dimensions: item.variant_dimensions || '',
+      variant_image: item.variant_image || item.image || '',
+      stock: item.stock || 0,
+      active: item.active,
+      active_channel: item.active_channel,
+      price: item.price,
+      wholesale_price: item.wholesale_price,
+      sales_offer_name: offerName,
+      created_at: item.created_at,
+      updated_at: item.updated_at
+    })
   }
   
   return Object.values(offersMap)
@@ -84,72 +107,286 @@ serve(async (req) => {
       throw new Error('Club not found')
     }
 
-    console.log('Club data:', {
-      id: clubData.id,
-      name: clubData.name,
-      bob_id: clubData.bob_id,
-      internal: clubData.internal
-    })
-
-    // Call BOB report to get variants (report ID 25)
-    const { data: bobResponse, error: bobError } = await supabaseClient.functions.invoke('bob-report', {
-      body: { 
-        reportId: 25, 
-        value: Number(clubData.bob_id) 
+    // Get fresh sales channel URL from BOB using the club's internal ID
+    let salesChannelUrl = null
+    
+    if (clubData.internal) {
+      // Call bob-report to get fresh sales channel data
+      const { data: bobReportData, error: bobReportError } = await supabaseClient.functions.invoke('bob-report', {
+        body: {
+          reportId: 14, // The report ID for sales channel data
+          value: clubData.internal
+        },
+        headers: { Authorization: authHeader }
+      })
+      
+      if (!bobReportError && bobReportData?.data?.[0]) {
+        const salesChannelData = bobReportData.data[0]
+        // Try to find URL in various fields
+        salesChannelUrl = salesChannelData.url || 
+                         salesChannelData.domain || 
+                         salesChannelData.domena || 
+                         salesChannelData.web ||
+                         salesChannelData.adresa ||
+                         null
+      }
+    }
+    
+    if (!salesChannelUrl) {
+      console.error('No sales channel URL found for club:', clubData.name)
+      throw new Error('Sales channel URL not found')
+    }
+    
+    console.log('Using sales channel URL:', salesChannelUrl)
+    
+    // Call BOB API using salesOffer module and soubory module (same as old PHP version)
+    const modules = [
+      {
+        module: "kastomi",
+        method: "salesOffer",
+        key: `get_salesOffer_${Date.now()}`,
+        data: {
+          url: salesChannelUrl
+        }
       },
+      {
+        module: "kastomi", 
+        method: "soubory",
+        key: `get_soubory_${Date.now()}`,
+        data: {
+          url: salesChannelUrl
+        }
+      }
+    ]
+    
+    const { data: bobResponse, error: bobError } = await supabaseClient.functions.invoke('bob-api', {
+      body: { modules },
       headers: { Authorization: authHeader }
     })
 
     if (bobError) throw bobError
 
-    console.log("BOB API variants response:", JSON.stringify(bobResponse, null, 2))
-
-    // Extract variants data
-    const variantsData = bobResponse?.data || []
+    // Extract data from BOB API response
+    const salesOfferData = bobResponse?.modules?.[0]?.data || []
+    const filesData = bobResponse?.modules?.[1]?.data || []
     
-    // Log raw variants data
-    console.log("Raw variants data:", JSON.stringify(variantsData, null, 2))
+    // Build image maps from files data (soubory)
+    // Note: The path already includes "files/" prefix from BOB
+    const imageByRelaceId = {} // Map images by relace_id for main images
+    const variantImagesByTag = {} // Map images by tag for variant images
     
-    // Log first variant in detail if available
-    if (variantsData.length > 0) {
-      console.log("First variant details:", JSON.stringify(variantsData[0], null, 2))
-      console.log("All keys in first variant:", Object.keys(variantsData[0]))
+    // Debug: Log all file types we receive
+    const fileTypes = new Set()
+    filesData.forEach(f => fileTypes.add(f.typ))
+    console.log("Available file types in soubory:", Array.from(fileTypes))
+    
+    // Debug: Log sample files data structure
+    if (filesData.length > 0) {
+      console.log("Sample file data:", JSON.stringify(filesData.slice(0, 5), null, 2))
     }
-
-    // Aggregate variants by sales offer
-    const offers = aggregateVariantsByOffer(variantsData)
     
-    console.log("Aggregated offers:", JSON.stringify(offers, null, 2))
+    for (const file of filesData) {
+      // Process image path
+      let imagePath = file.cesta || file.path || ''
+      if (imagePath.startsWith('files/')) {
+        imagePath = imagePath.substring(6) // Remove "files/" prefix
+      }
+      
+      // URL encode the image path to handle spaces and special characters
+      imagePath = imagePath.split('/').map(part => encodeURIComponent(part)).join('/')
+      
+      // Main product images
+      if (file.relace_id && file.typ === 'hlavni_obrazek') {
+        imageByRelaceId[file.relace_id] = imagePath
+      }
+      
+      // Variant images - stored with typ = 'obrazek[]' and linked via tag field
+      if (file.typ === 'obrazek[]' && file.tag) {
+        // The tag field contains the variant identifier
+        variantImagesByTag[file.tag] = imagePath
+        console.log(`Found variant image: tag="${file.tag}", path="${imagePath}", relace_id="${file.relace_id}"`)
+      }
+    }
+    
+    // Debug: Log which IDs have images
+    console.log("Image mapping summary:", {
+      mainImages: Object.keys(imageByRelaceId).length,
+      variantImages: Object.keys(variantImagesByTag).length,
+      sampleMainMappings: Object.entries(imageByRelaceId).slice(0, 3).map(([id, path]) => ({ id, path })),
+      sampleVariantMappings: Object.entries(variantImagesByTag).slice(0, 3).map(([tag, path]) => ({ tag, path }))
+    })
+    
+    // Log summary
+    console.log("BOB API Summary:", {
+      club: clubData.name,
+      offers: salesOfferData.length,
+      totalVariants: salesOfferData.reduce((sum, o) => sum + (o.variants?.length || 1), 0),
+      mainImages: Object.keys(imageByRelaceId).length,
+      variantImagesByTag: Object.keys(variantImagesByTag).length,
+      offersWithImages: salesOfferData.filter(o => imageByRelaceId[o.id]).length
+    })
 
+    // Debug: Log sample offer with variants to understand structure
+    if (salesOfferData.length > 0 && salesOfferData[0].variants) {
+      const firstVariant = salesOfferData[0].variants?.[0]
+      console.log("Sample offer with variants:", {
+        offerId: salesOfferData[0].id,
+        offerName: salesOfferData[0].name,
+        variantCount: salesOfferData[0].variants?.length,
+        firstVariantId: firstVariant?.id,
+        firstVariantName: firstVariant?.name || firstVariant?.variant,
+        hasParams: !!firstVariant?.params,
+        paramsCount: firstVariant?.params?.length,
+        sampleParams: firstVariant?.params?.slice(0, 3).map(p => ({
+          name: p.param?.name,
+          internal: p.param?.internal,
+          val: p.val
+        }))
+      })
+    }
+    
+    // salesOffer module returns offers directly, not variants
+    // Transform the data to match expected structure and add images
+    const offers = salesOfferData.map(item => {
+      // Get image for this offer by its ID
+      const offerImage = imageByRelaceId[item.id] || ''
+      
+      // If the offer has variants array, use it; otherwise create a single variant
+      const variants = item.variants && Array.isArray(item.variants) ? 
+        item.variants.map((v, idx) => {
+          let variantImage = null
+          
+          // First check if variant has params array with SalesOfferVariantImage
+          if (v.params && Array.isArray(v.params)) {
+            const imageParam = v.params.find(p => 
+              p.param?.name === 'SalesOfferVariantImage' || 
+              p.param?.internal === 'SalesOfferVariantImage'
+            )
+            if (imageParam && imageParam.val) {
+              // The value is the image path
+              let imagePath = imageParam.val
+              // Remove "files/" prefix if present
+              if (imagePath.startsWith('files/')) {
+                imagePath = imagePath.substring(6)
+              }
+              // URL encode the path
+              variantImage = imagePath.split('/').map(part => encodeURIComponent(part)).join('/')
+              console.log(`Found variant image from SalesOfferVariantImage param for variant ${v.id}:`, variantImage)
+            }
+          }
+          
+          // If no image from params, try tag-based mapping
+          if (!variantImage) {
+            // Try different possible tag formats
+            const possibleTags = [
+              v.name,           // Variant name
+              v.variant,        // Variant field
+              v.color,          // Color field
+              v.tag,            // Direct tag field if exists
+              `${item.id}_${v.name}`, // Combination of offer ID and variant name
+              `${item.id}_${v.color}`, // Combination of offer ID and color
+            ].filter(Boolean) // Remove null/undefined values
+            
+            // Find the first matching tag
+            for (const tag of possibleTags) {
+              if (variantImagesByTag[tag]) {
+                variantImage = variantImagesByTag[tag]
+                console.log(`Found variant image for variant ${v.id} using tag "${tag}":`, variantImage)
+                break
+              }
+            }
+          }
+          
+          // Fall back to main offer image if no variant-specific image found
+          if (!variantImage) {
+            variantImage = offerImage
+          }
+          
+          return {
+            variant_id: v.id || item.id,
+            variant: v.name || v.variant || item.name,
+            variant_size: v.size || '',
+            variant_color: v.color || '',
+            variant_dimensions: v.dimensions || '',
+            variant_image: variantImage,
+            stock: v.stock || 0,
+            active: item.active,
+            active_channel: item.active_channel,
+            price: item.price,
+            wholesale_price: item.wholesale_price,
+            sales_offer_name: item.name,
+            created_at: v.created || item.created,
+            updated_at: v.updated || item.updated
+          }
+        }) : [{
+          // Single variant created from offer - still check for variant images by tag
+          variant_id: item.id,
+          variant: item.name,
+          variant_size: '',
+          variant_color: '',
+          variant_dimensions: '',
+          variant_image: variantImagesByTag[item.name] || offerImage,
+          stock: 0,
+          active: item.active,
+          active_channel: item.active_channel,
+          price: item.price,
+          wholesale_price: item.wholesale_price,
+          sales_offer_name: item.name,
+          created_at: item.created,
+          updated_at: item.updated
+        }]
+      
+      return {
+        id: item.id,
+        sales_offer_id: item.id,
+        sales_offer_name: item.name,
+        sales_offer_text: item.text || '',
+        seo: item.seo,
+        wholesale_price: item.wholesale_price,
+        price: item.price,
+        active_channel: item.active_channel,
+        active: item.active,
+        sales_offer_status_id: item.sales_offer_status_id,
+        variants: variants
+      }
+    })
+
+    // Log first offer with image to debug
+    const firstOfferWithImage = offers.find(o => o.variants[0]?.variant_image)
+    if (firstOfferWithImage) {
+      console.log("First offer with image being sent to frontend:", {
+        id: firstOfferWithImage.id,
+        name: firstOfferWithImage.sales_offer_name,
+        firstVariantImage: firstOfferWithImage.variants[0].variant_image
+      })
+    }
+    
     // Format offers for frontend
     const formattedOffers = offers.map(offer => {
-      // Get price from first variant since prices are at offer level
-      // All variants of an offer should have the same price
-      const firstVariant = offer.variants[0] || {}
-      
-      // Extract prices from BOB data
-      // Based on the data structure: wholesale_price and price (final price) are provided
-      // klub_price is calculated as: price - wholesale_price
-      const wholesalePrice = Number(firstVariant.wholesale_price) || 0
-      const finalPrice = Number(firstVariant.price) || 0
+      // Get price from offer level
+      const wholesalePrice = Number(offer.wholesale_price) || 0
+      const finalPrice = Number(offer.price) || 0
       const klubPrice = finalPrice - wholesalePrice
       
-      console.log(`Offer ${offer.sales_offer_id} prices:`, {
-        wholesale: wholesalePrice,
-        final: finalPrice,
-        klub_calculated: klubPrice,
-        raw_wholesale: firstVariant.wholesale_price,
-        raw_price: firstVariant.price
-      })
+      // Get active status from offer level - salesOffer module provides it at offer level
+      // active_channel is the club-specific status (what we show in the UI)
+      // active is the general product status
+      const activeChannel = offer.active_channel !== undefined ? Number(offer.active_channel) : 0
+      const active = offer.active !== undefined ? Number(offer.active) : 1
+      
       
       return {
       id: offer.sales_offer_id,
       name: offer.sales_offer_name || '',
       seo: offer.seo || '',
-      sales_offer_text: firstVariant.sales_offer_text || '',
+      sales_offer_text: offer.sales_offer_text || '',
       wholesale_price: wholesalePrice,
       price: finalPrice,
       klub_price: klubPrice,
+      // Use the active values from offer level
+      active_channel: activeChannel,
+      active: active,
+      sales_offer_status_id: offer.sales_offer_status_id || 1,
       // Add price_range for compatibility
       price_range: {
         min: finalPrice,
@@ -163,13 +400,14 @@ serve(async (req) => {
         size: v.variant_size || '',
         color: v.variant_color || '',
         dimensions: v.variant_dimensions || '',
-        image: v.variant_image || '',
+        variant_image: v.variant_image || '',  // Changed from 'image' to 'variant_image'
         // Prices are same for all variants of an offer
         wholesale_price: wholesalePrice,
         price: finalPrice,
         klub_price: klubPrice,
         stock: v.stock || 0,
-        active: v.active !== false,
+        active: active, // Use the numeric active value
+        active_channel: activeChannel,
         created_at: v.created_at,
         updated_at: v.updated_at
       })),
