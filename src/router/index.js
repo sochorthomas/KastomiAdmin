@@ -7,6 +7,9 @@ import Dashboard from '@/views/Dashboard.vue'
 import Orders from '@/views/Orders.vue'
 import Products from '@/views/Products.vue'
 import Dresy from '@/views/Dresy.vue'
+import Provize from '@/views/Provize.vue'
+import ProvizeDetail from '@/views/ProvizeDetail.vue'
+import ProvizeNew from '@/views/ProvizeNew.vue'
 import NotFound from '@/views/NotFound.vue'
 
 const routes = [
@@ -59,6 +62,37 @@ const routes = [
     name: 'Dresy',
     component: Dresy,
     meta: { requiresAuth: true, layout: 'app' }
+  },
+  {
+    path: '/provize',
+    name: 'Provize',
+    component: Provize,
+    meta: { requiresAuth: true, layout: 'app' }
+  },
+  {
+    path: '/provize/new',
+    name: 'ProvizeNew',
+    component: ProvizeNew,
+    meta: { requiresAuth: true, layout: 'app' }
+  },
+  {
+    path: '/provize/:id',
+    name: 'ProvizeDetail',
+    component: ProvizeDetail,
+    meta: { requiresAuth: true, layout: 'app' }
+  },
+  // Shop Edit Mode Routes
+  {
+    path: '/shop',
+    name: 'ShopSales',
+    component: () => import('@/views/shop/SalesComplete.vue'),
+    meta: { requiresAuth: true, layout: 'shop' }
+  },
+  {
+    path: '/shop/product/:seo',
+    name: 'ShopProduct',
+    component: () => import('@/views/shop/ProductDetail.vue'),
+    meta: { requiresAuth: true, layout: 'shop' }
   },
 
   {

@@ -39,27 +39,20 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { sales_channel_url } = await req.json()
-    
-    if (!sales_channel_url) {
-      throw new Error('Sales channel URL is required')
+    const { sales_channel_id } = await req.json()
+
+    if (!sales_channel_id) {
+      throw new Error('Sales channel ID is required')
     }
 
-    // Create the module for BOB API
-    const module = {
-      module: "kastomi",
-      method: "salesDresy",
-      key: `get_dresy_${Date.now()}`,
-      data: {
-        url: sales_channel_url
-      }
-    }
+    console.log('Getting dresy count for channel ID:', sales_channel_id)
 
-    console.log('Calling BOB API with module:', module)
-
-    // Call BOB API
-    const { data: bobResponse, error: bobError } = await supabaseClient.functions.invoke('bob-api', {
-      body: { modules: [module] },
+    // Call bob-report function with report ID 19
+    const { data: bobResponse, error: bobError } = await supabaseClient.functions.invoke('bob-report', {
+      body: {
+        reportId: 19,
+        value: "86"
+      },
       headers: { Authorization: authHeader }
     })
 
@@ -70,8 +63,8 @@ serve(async (req) => {
 
     console.log('BOB API response:', bobResponse)
 
-    // Extract data from response
-    const dresyData = bobResponse?.modules?.[0]?.data || []
+    // Extract data from response - bob-report returns nested structure
+    const dresyData = bobResponse?.modules?.[1]?.data?.data || bobResponse?.data || bobResponse || []
     const count = Array.isArray(dresyData) ? dresyData.length : 0
 
     console.log(`Found ${count} dresy records`)

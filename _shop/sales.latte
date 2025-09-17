@@ -1,0 +1,592 @@
+{block content}
+
+<div n:if="isset($topcategorymenu)" class="categories-container"> {*Zatím nepoužíváno *}
+    <div class="categories-menu">
+        <ul class="categories-main">
+            <li class="category-item" data-menu="tshirt_menu"><a href="#">Trička <i class="fas fa-caret-down"></i></a></li>
+            <li class="category-item" data-menu="hoodies_menu"><a href="#">Mikiny <i class="fas fa-caret-down"></i></a></li>
+            <li class="category-item" data-menu="caps_menu"><a href="#">Čepice <i class="fas fa-caret-down"></i></a></li>
+            <li><a href="#">Ponožky</a></li>
+        </ul>
+        <div class="categories-second">
+            <ul id="tshirt_menu" class="categories-menu-dropdown">
+                <li><b>Trička &#8250; </b></li>
+                <li><a href="#">Dámské</a></li>
+                <li><a href="#">Pánské</a></li>
+                <li><a href="#">Dětské</a></li>
+            </ul>
+            <ul id="hoodies_menu" class="categories-menu-dropdown">
+                <li><b>Mikiny &#8250;</b></li>
+                <li><a href="#">S kapucí</a></li>
+                <li><a href="#">Bez kapuce</a></li>
+                <li><a href="#">Na běh</a></li>
+            </ul>
+            <ul id="caps_menu" class="categories-menu-dropdown">
+                <li><b>Čepice &#8250; </b></li>
+                <li><a href="#">Kšiltovky</a></li>
+                <li><a href="#">Kulichy</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+const categoryItems = document.querySelectorAll('.category-item');
+const carets = document.querySelectorAll('.fa-caret-down');
+const categoriesMenuDropdowns = document.querySelectorAll('.categories-menu-dropdown');
+
+
+function showCategories(item) {
+    const caret = item.querySelector('.fa-caret-down');
+    const menuId = item.dataset.menu;
+    const id = document.getElementById(menuId);
+    const displayStyle = window.getComputedStyle(id).display;
+
+    categoriesMenuDropdowns.forEach(dropdown => {
+        dropdown.style.display = 'none';
+    });
+
+    carets.forEach(caretIcon => {
+        caretIcon.style.transform = 'rotateX(0deg)';
+    });
+
+    if (displayStyle === 'none') {
+        id.style.display = 'flex';
+        caret.style.transform = 'rotateX(-180deg)';
+    } else {
+        id.style.display = 'none';
+        caret.style.transform = 'rotateX(0deg)';
+    }
+}
+
+categoryItems.forEach(item => {
+    item.addEventListener('click', () => showCategories(item));
+});
+</script>
+
+{*--------------------------- Vánoční hláška s odpočtem----------------------------------------*}
+<script n:syntax=off>
+
+(function () {
+    const now = new Date();
+    const showNoteDate = new Date(now.getFullYear(), 11, 01, 00, 00, 00); 
+    const firstChangeNoteDate = new Date(now.getFullYear(), 11, 08, 23, 59, 59);
+    const secondChangeNoteDate = new Date(now.getFullYear(), 11, 12, 23, 59, 59);
+    const hideNoteDate = new Date(now.getFullYear(), 11, 23, 23, 59, 59); 
+
+    let noteElement;
+    let countdownInterval;
+
+    // Function to create or update the note
+    function showNote() {
+        if (!noteElement) {
+            // Create the note element if it doesn't exist
+            noteElement = document.createElement('div');
+            noteElement.id = 'dynamic-note';
+            noteElement.style.textAlign = 'center';
+            noteElement.style.padding = '15px 10px';
+            noteElement.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+            document.body.appendChild(noteElement);
+        }
+
+        const now = new Date();
+        const timeLeft = firstChangeNoteDate - now;
+
+        if (timeLeft <= 0) {
+            firstChangeNote();
+            clearInterval(countdownInterval);
+            return;
+        }
+
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+        noteElement.innerHTML = `<span style="font-size: 30px" title="Doručení do Vánoc">🎄</span> Pro objednávky s 
+        garantovaným doručením do Vánoc zbývá: ${days} dnů, ${hours} hodin, ${minutes} minut, ${seconds} sekund.`;
+    }
+
+    // Function to change the note content (first phase)
+    function firstChangeNote() {
+        if (!noteElement) {
+            noteElement = document.createElement('div');
+            noteElement.id = 'dynamic-note';
+            noteElement.style.textAlign = 'center';
+            noteElement.style.padding = '15px 10px';
+            noteElement.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+            document.body.appendChild(noteElement);
+        }
+        noteElement.innerHTML = `<span style="font-size: 30px" title="Doručení do Vánoc">🎄</span> Pro doručení objednávek do Vánoc uděláme vše, co bude v našich silách. Bohužel už však nejsme schopni jej plně garantovat.`;
+    }
+
+    // Function to change the note content (second phase)
+    function secondChangeNote() {
+        if (!noteElement) {
+            noteElement = document.createElement('div');
+            noteElement.id = 'dynamic-note';
+            noteElement.style.textAlign = 'center';
+            noteElement.style.padding = '15px 10px';
+            noteElement.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+            document.body.appendChild(noteElement);
+        }
+        noteElement.innerHTML = `<span style="font-size: 30px" title="Doručení do Vánoc">🎄</span> Objednávky učiněné v tuto chvíli již pravděpodobně do Vánoc nedorazí.`;
+    }
+
+    // Function to remove the note
+    function hideNote() {
+        if (noteElement) {
+            noteElement.remove();
+            noteElement = null;
+        }
+    }
+
+    // Main logic
+    if (now >= showNoteDate && now < firstChangeNoteDate) {
+        showNote();
+        countdownInterval = setInterval(showNote, 1000); // Update the countdown every second
+    } else if (now >= firstChangeNoteDate && now < secondChangeNoteDate) {
+        firstChangeNote();
+    } else if (now >= secondChangeNoteDate && now < hideNoteDate) {
+        secondChangeNote();
+    } else if (now >= hideNoteDate) {
+        hideNote();
+    }
+})();
+
+</script>
+
+    
+    <div n:if="$salesChannel['internal'] == 'florbal-kladno'">
+        <p style="box-shadow: rgba(17, 12, 46, 0.15) 0px 4.8px 10px 0px; width: 100%; text-align: center; padding: 15px">Náš fanshop právě prochází úpravami spojenými s nadcházející změnou klubové identity 👑 </p>
+    </div>
+
+    <div class="eshop_section">
+        <h4 id="filter-opener" onclick="openFilters()">Filtry</h4>
+        <div class="filters" id="filters">
+            <div>
+                <form method="get" action="{link sales}" class="search">
+                    <input type="text" placeholder="Co hledáte?" name="q" value="{if isset($_GET['q'])}{$_GET['q']}{/if}" />
+                    <button type="submit"><i class="fa fa-search"></i></button>
+                    <input type="hidden" name="filtr" value="1" />
+                </form>
+            </div>
+            <div>
+                <div class="row product-category__menu" aria-expanded="false" aria-controls="collapse_5" data-bs-toggle="collapse" data-bs-target="#collapse_6" onclick="change('6-btn')">
+                    <div class="col-8"><span class="product-category__name">Kategorie</span></div>
+                    <div class="col-1">
+                        <button type="button" class="collapse-btn" id="6-btn">-</button>
+                    </div>
+                </div>
+                <div id="collapse_6" class="collapse show">
+                    <div class="col-12">
+                        {foreach $category as $cat_id => $cat_name}
+                            <a class="filter-value " href="#cat{$cat_id}"><span class="btn-text">{$cat_name}</span></a>
+                        {/foreach}
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .aktivni { background: black; color: white; }
+            </style>
+
+            {foreach $filtry as $filtr => $hodnoty}
+                {if in_array($filtr, ['Složení','Typ','Délka'])}{php continue}{/if}
+            <div>
+                <div class="row product-category__menu" aria-expanded="false" aria-controls="collapse_{$iterator->counter}" data-bs-toggle="collapse" data-bs-target="#collapse_{$iterator->counter}" onclick="change('{$iterator->counter}-btn')">
+                    <div class="col-8"><span class="product-category__name">{$filtr}</span></div>
+                    <div class="col-1">
+                        <button type="button" class="collapse-btn" id="{$iterator->counter}-btn">{if (isset($aktivni_filtr) && $aktivni_filtr == $filtr) or ($iterator->counter < 5)}-{else}+{/if}</button>
+                    </div>
+                </div>
+                <div id="collapse_{$iterator->counter}" class="collapse{if (isset($aktivni_filtr) && $aktivni_filtr == $filtr) or ($iterator->counter < 5)} show{/if}">
+                    <div class="col-12">
+
+                        <a n:foreach="$hodnoty as $hodnota" class="filter-value {if isset($aktivni_filtr) && $aktivni_filtr == $filtr && $aktivni_filtr_hodnota == $hodnota}aktivni{/if}" {if isset($aktivni_filtr) && $aktivni_filtr == $filtr && $aktivni_filtr_hodnota == $hodnota}href="{link sales}"{else}href="{link sales, 'filtr' => $filtr, 'hodnota' => $hodnota}"{/if}><span class="btn-text">{$hodnota}</span></a>
+
+                    </div>
+                </div>
+            </div>
+            {/foreach}
+
+
+            <div n:if="isset($_GET['filtr'])">
+                <div class="row product-category__menu">
+                    <a n:href="sales"><button class="reset">Zrušit filtry &#10006; </button></a>
+                </div>
+            </div>
+
+            <script>
+                function change(id) {
+                    var x = document.getElementById(id);
+
+                    if (x.innerHTML === "+") {
+                        x.innerHTML = "-";
+                    } else {
+                        x.innerHTML = "+";
+                    }
+                }
+                function openFilters(){
+                    var filters = document.getElementById('filters')
+
+                    if(window.getComputedStyle(filters, null).getPropertyValue("display") === 'none'){
+                        filters.style.display = "block"
+                    }
+                    else{
+                        filters.style.display = "none"
+                    }
+                }
+            </script>
+
+
+
+            {* <div n:if="$salesChannel['internal'] == 'tatran-stresovice'" class="special-collections">
+                <div class="row product-category__menu" aria-expanded="false" aria-controls="collapse_5" data-bs-toggle="collapse" data-bs-target="#banners" onclick="change('5-btn')">
+                    <div class="col-8"><span class="product-category__name">Speciální kolekce</span></div>
+                    <div class="col-1">
+                        <button type="button" class="collapse-btn" id="5-btn">-</button>
+                    </div>
+                </div>
+                <div id="banners" class="collapse show">
+                    <div class="banners">
+
+                        <a href="https://tatran.kastomi.com/#cat201" ><img class="banner" src="/images/banner_vanoce.png"></a>
+                        
+                        
+                    </div>
+                </div>
+            </div>
+            <div n:if="$salesChannel['internal'] == 'jimi-rugby-club'" class="special-collections">
+                <div class="row product-category__menu" aria-expanded="false" aria-controls="collapse_6" data-bs-toggle="collapse" data-bs-target="#banners" onclick="change('6-btn')">
+                    <div class="col-8"><span class="product-category__name">Vánoční kolekce</span></div>
+                    <div class="col-1">
+                        <button type="button" class="collapse-btn" id="6-btn">-</button>
+                    </div>
+                </div>
+                <div id="banners" class="collapse show">
+                    <div class="banners">
+
+                        <a href="https://fanshop.rugbyvyskov.cz/#cat193" ><img class="banner" src="/images/jimi-christmas-banner1.jpg"></a>
+
+                        
+                    </div>
+                </div>
+            </div> *}
+
+
+           
+        </div>
+        <div class="products">
+            {if count($rows) == 0}
+                <h2>Žádné produkty nebyly nalezeny.</h2>
+            {/if}
+
+
+        {foreach $category as $cat_id => $cat_name}
+            <div class="category-divider" id="cat{$cat_id}">{$cat_name}</div>
+                                        
+                    {foreach $rows as $row}
+
+                        {if $row['sales_offer_status_id'] == 3}{php continue}{/if} {* archivovane nezobrazovat *}
+                        {if $row['active_channel'] == 0}{php continue}{/if} {* archivovane nezobrazovat *}
+
+                        {var $je = false}
+                        {foreach $row['kategorie'] as $k}{if $k['id'] == $cat_id}{var $je = true}{/if}{/foreach}
+                        {if $je == false}{php continue}{/if}
+
+    {* Parametry nabídky*}
+    {var $salesOfferDodavatel = ''}
+    {var $salesOfferGender = ''}
+    {var $salesOfferKastomizace = ''}
+    {var $salesOfferSpecialIcon = ''}
+    {var $specialIconPopis = ''}
+
+    {foreach $row["params"] as $p}
+        {if $p["param"]["name"] == "Dodavatel"}
+            {var $salesOfferDodavatel = $p['val']}
+        {/if}
+        {if $p["param"]["name"] == "Pro koho?"}
+            {var $salesOfferGender = $p['val']}
+        {/if}
+        {if $p["param"]["name"] == "Special icon"}
+            {var $salesOfferSpecialIcon = $p['val']}
+        {/if}
+        {if $p["param"]["name"] == "Special icon popis"}
+            {var $specialIconPopis = $p['val']}
+        {/if}
+    {/foreach}
+
+{if $salesOfferGender == 'Unisex'}{var $salesOfferGender = 'unisex'}
+    {elseif $salesOfferGender == 'Dětské' or $salesOfferGender == 'Děti'}{var $salesOfferGender = 'kids'}
+    {elseif $salesOfferGender == 'Pánské' or $salesOfferGender == 'Muži'}{var $salesOfferGender = 'men'}
+    {elseif $salesOfferGender == 'Dámské' or $salesOfferGender == 'Ženy'}{var $salesOfferGender = 'women'}
+{/if}
+
+{foreach $row['kastomi'] as $kastomi}
+        {if $kastomi['internal'] == "on_product" || $kastomi['internal'] == "on_kastpic"}
+
+            {var $salesOfferKastomizace = true}
+        {/if}
+{/foreach}
+
+{* Parametry jejích variant*}
+{php $variants = []}
+{php $variants_for_sort = []}
+{foreach $row['variants'] as $v}
+    {php $variants[$v['id']] = $v}
+    {php $variants_for_sort[$v['id']] = $v["variant"]}
+{/foreach}
+
+{var $serazeno = seraditVariantyNechat($variants_for_sort)}
+{var $colorDetails = []}
+{var $gender = ''}
+{var $men = false}
+{var $women = false}
+{var $kids = false}
+{var $unisex = false}
+{var $noGender = false}
+{var $newSrc = false}
+{var $uniqueSizes = []}
+{foreach $serazeno as $vv_porovnat}
+    {foreach $row['variants'] as $vv}
+        {if $vv['variant'] == $vv_porovnat}
+
+            {var $colorPreview = ''}
+            {var $colorName = ''}
+                    
+
+            {php $dostupnost = $dostupnost_barva = false}
+            {foreach $vv['params'] as $param}
+                {if $param['param']['internal'] == 'dostupnost'}
+                    {var $dostupnost = $param['val']}
+                {/if}
+                {if $param['param']['internal'] == 'dostupnost_barva'}
+                    {var $dostupnost_barva = $param['val']}
+                {/if}
+                {if $param['param']['name'] == 'Pohlaví'}
+                    {php $gender = $param['val'];}
+                {/if}
+                {if $param['param']['name'] == 'Velikost'}
+                    {if !in_array($param['val'], $uniqueSizes)}
+                        {php $uniqueSizes[] = $param['val'];}
+                    {/if}
+                {/if}
+                {if $param['param']['name'] == 'Barva - HEX'}
+                    {var $colorPreview = $param['val']}
+                {/if}
+                {if $param['param']['name'] == 'Barva - pojmenování'}
+                    {var $colorName = $param['val']}
+                {/if}
+                {if $param['param']['name'] == 'SalesOfferVariantImage'}
+                    {var $newSrc = $param['val']}
+                {/if}
+            {/foreach}
+            {if $gender == "Pánské"}
+                {var $men = true}
+            {/if}
+            {if $gender == "Dámské"}
+                {var $women = true}
+            {/if}
+            {if $gender == "Dětské"}
+                {var $kids = true}
+            {/if}
+            {if $gender == "Unisex"}
+                {var $unisex = true}
+            {/if}
+            {if $gender == ""}
+                {var $noGender = true}
+            {/if}
+            {if $colorPreview && $colorName && $newSrc}
+                    {var $colorDetails[] = ['hex' => $colorPreview, 'name' => $colorName, 'image' => $newSrc]}
+            {/if}
+        {/if}
+    {/foreach}
+    {$gender = ''}
+
+{/foreach}
+
+{var $uniqueColorDetails = []}
+{var $uniqueKeys = []}
+{foreach $colorDetails as $cd}
+    {var $key = $cd['hex']}
+    {if !in_array($key, $uniqueKeys)}
+        {var $uniqueKeys[] = $key}
+        {var $uniqueColorDetails[] = $cd}
+    {/if}
+{/foreach}
+<a n:href="salesOffer $row['seo']">
+    <div class="product">
+{var $genderIcons = []}
+{if $men}
+    {var $genderIcons[] = ['icon' => 'men', 'alt' => 'Pánské', 'title' => 'Pánské']}
+{/if}
+{if $women}
+    {var $genderIcons[] = ['icon' => 'women', 'alt' => 'Dámské', 'title' => 'Dámské']}
+{/if}
+{if $kids}
+    {var $genderIcons[] = ['icon' => 'kids', 'alt' => 'Dětské', 'title' => 'Dětské']}
+{/if}
+{if $unisex}
+    {var $genderIcons[] = ['icon' => 'unisex', 'alt' => 'Unisex', 'title' => 'Unisex']}
+{/if}
+{if $noGender}
+    {var $genderIcons[] = ['icon' => $salesOfferGender, 'alt' => $salesOfferGender, 'title' => $salesOfferGender]}
+{/if}
+{if $salesOfferKastomizace}
+    {var $genderIcons[] = ['icon' => 'pen', 'alt' => 'Tužka', 'title' => 'Personalizovatelné']}
+{/if}
+
+<div class="gender">
+    {if $salesOfferSpecialIcon}
+        <img style="width: 50px; height: 50px" src="https://kastomi.kastomi.com/images/{$salesOfferSpecialIcon}.png"  title="{$specialIconPopis}">
+    {else}
+        <div style="width: 50px; height: 50px"></div>
+    {/if}
+
+    {if count($genderIcons) > 1}
+        <div class="gender-icons">
+            {foreach $genderIcons as $genderIcon}
+                <img src="https://kastomi.kastomi.com/images/{$genderIcon['icon']}.svg" alt="{$genderIcon['alt']}" title="{$genderIcon['title']}">
+            {/foreach}
+        </div>
+    {elseif count($genderIcons) == 1}
+        {var $genderIcon = $genderIcons[0]}
+        <img n:if="$genderIcon['icon']" src="https://kastomi.kastomi.com/images/{$genderIcon['icon']}.svg" alt="{$genderIcon['alt']}" title="{$genderIcon['title']}">
+    {/if}
+</div>
+
+                                    <div class="product-image">
+                                        <img n:if="isset($soubory[$row['id']])" src="https://cdn.kastomi.com/{$soubory[$row['id']]}" alt="{$row['name']}" id="image-{$row['id']}"/>
+                                        <div class="product-overlay">
+                                            <p>Dostupné varianty:<br> <strong>
+
+                                        {var $sortedData = sortByOrderMap($uniqueSizes)}
+                                                    {foreach $sortedData as $us}
+                                            {$us}{sep},{/sep}
+                                        {/foreach}
+
+</strong></p>
+                                        </div>
+                                    </div>
+                                    <p class="product-desc"></p>
+                                    <div class="col-start">
+                                        <h3 class="product-name">{$row['name']}</h3>
+                                        <p class="product-price">{$row['price']} Kč</p>
+                                    </div>
+                                    {if $uniqueColorDetails}
+                                        <div class="product-color">
+                                            {foreach $uniqueColorDetails as $cd}
+                                                <span class="color-box" style="background: {$cd['hex']|noescape}" title="{$cd['name']|noescape}" onmouseover="changeImageSrc({$cd['image']}, {$row['id']})"></span>
+                                            {/foreach}
+                                        </div>
+                                    {/if}
+
+
+                                    <div class="sklad">
+                                        {if $salesOfferDodavatel == 'Unihoc'}
+                                               <span class="orange"> 
+                                                    Dodání od firmy Unihoc &nbsp; 
+                                                    <span class="tooltip-container" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)">
+                                                        <i class="fa-solid fa-circle-info"></i>
+                                                        <span class="tooltiptext">Doručení trvá ve většině případů 14 prac. dní. Tuto dobu ale bohužel nejsme schopni garantovat.</span>
+                                                    </span>
+                                                </span>
+                                            {elseif isset($dostupnost)}
+                                                <span style="color: {$dostupnost_barva}">{$dostupnost}</span>
+                                            {/if}
+                                        
+                                    </div>
+                                </div>
+                            </a>
+
+
+            {/foreach}
+        {/foreach}
+        <div class="category-divider last-divider">Nenašli jste co jste hledali?</div>
+        {* U našich (městských shopů) dát formulář na zakázkovou výrobu*}
+        {var $channelsNotClub = ['shop-kladno', 'mesto-slany','dobris-shop', 'shop-brno','slhidfish']}
+        {if in_array($salesChannel['internal'], $channelsNotClub)}
+            <div class="other-products"><h4>Máte zájem o výrobu vlastních triček s potiskem?</h4><br><h5> Vyplňte formulář níže a my se Vám ozveme na e-mail.<br></h5>
+                <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
+                <script>
+                hbspt.forms.create({
+                    region: "na1",
+                    portalId: "14487971",
+                    formId: "dcbbbb7f-5d1e-46bc-a34b-b7796554e502"
+                });
+                </script>
+            </div>
+        {* Vlastní nastavení konkrétních PK*}
+        {elseif $salesChannel['internal'] == 'my-community'}
+            <div class="other-products"><h5>Neváhejte se prosím obrátit na náš e-mail <a href="mailto:info@mycommunity.cz">info@mycommnity.cz</a></h5><br></div>
+
+        {* U sportovních klubů*}
+        {else}
+            <div class="other-products"><h5>Rádi pro Vás vyrobíme jakýkoliv další textil na míru.<br><br> Například:<br></h5>
+                <ul class="other-products-examples">
+                    <li><img src="/images/anniversary.svg" class="other-products-icon"><p>Limitovaná edice k výročí založení klubu</p></li>
+                    <li><img src="/images/trophy.svg" class="other-products-icon"><p>Připomínka důležitého<br> vítězství</p></li>
+                    <li><img src="/images/fans.png" class="other-products-icon"><p>Fanouškovský klub<br> či sekce</p></li>
+                </ul>
+
+                <h5><br>Napadá Vás cokoliv dalšího? Neváhejte se obrátit na <a href="mailto:info@kastomi.com">info@kastomi.com</a></h5>
+
+                {if $salesChannel['internal'] == 'vk-jihostroj-ceske-budejovice'}
+                    <h5><br>Zástupce VK Jihostroj můžete kontaktovat na<br> <a href="mailto:katerina.kohoutova@volejbalcb.cz">katerina.kohoutova@volejbalcb.cz</a> nebo tel. 725 030 315</h5>
+                {/if}
+            </div>
+        
+        {/if}
+
+
+        
+
+        
+
+        </div>
+        <span onclick="scrollTop()" id="scroll-top-btn" title="Zpět na začátek" role="button">
+  <i class="fa-solid fa-chevron-up"></i>
+</span>
+
+    </div>
+
+
+
+<script>
+ function changeImageSrc(newFilename, salesOffer) {
+        var mainImage = document.getElementById("image-" + salesOffer);
+        if (mainImage) {
+            mainImage.src = "https://bob.kastomi.com/files/" + newFilename;
+        }
+    }
+    function showTooltip(element) {
+        clearTimeout(element.hideTimeout); // Clear any existing hide timeout
+        var tooltip = element.querySelector('.tooltiptext');
+        tooltip.classList.add('show');
+    }
+
+    function hideTooltip(element) {
+        var tooltip = element.querySelector('.tooltiptext');
+        element.hideTimeout = setTimeout(function() {
+            tooltip.classList.remove('show');
+        }, 1000);
+    }
+document.getElementById('scroll-top-btn').addEventListener('click', scrollTop);
+
+ 
+
+  window.onscroll = function() {
+    if (document.body.scrollTop > 30 || document.documentElement.scrollTop > 30) {
+      document.getElementById("scroll-top-btn").style.display = "block";
+    } else {
+      document.getElementById("scroll-top-btn").style.display = "none";
+    }
+  };
+
+  function scrollTop() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+</script>
+{/block}

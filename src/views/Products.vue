@@ -1,36 +1,5 @@
 <template>
   <div class="products-container">
-    <!-- Quick Stats -->
-    <div class="stats-row" v-if="!loading && offers.length > 0">
-      <div class="stat-card-mini">
-        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #0084ff 0%, #1e3a8a 100%);">
-          <i class="pi pi-box"></i>
-        </div>
-        <div class="stat-mini-content">
-          <div class="stat-mini-value">{{ offers.length }}</div>
-          <div class="stat-mini-label">Produktů</div>
-        </div>
-      </div>
-      <div class="stat-card-mini">
-        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">
-          <i class="pi pi-tags"></i>
-        </div>
-        <div class="stat-mini-content">
-          <div class="stat-mini-value">{{ totalVariants }}</div>
-          <div class="stat-mini-label">Variant</div>
-        </div>
-      </div>
-      <div class="stat-card-mini">
-        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
-          <i class="pi pi-check-circle"></i>
-        </div>
-        <div class="stat-mini-content">
-          <div class="stat-mini-value">{{ activeProducts }}</div>
-          <div class="stat-mini-label">Aktivních</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Content Card -->
     <Card class="products-card">
       <template #header>
@@ -43,18 +12,6 @@
             <p class="header-subtitle">Správa produktů a variant</p>
           </div>
           <div class="header-actions">
-            <div class="search-box">
-              <IconField iconPosition="left">
-                <InputIcon>
-                  <i class="pi pi-search" />
-                </InputIcon>
-                <InputText 
-                  v-model="globalFilter" 
-                  placeholder="Hledat produkty..." 
-                  class="search-input"
-                />
-              </IconField>
-            </div>
             <Select 
               v-model="activeFilter"
               :options="activeFilterOptions"
@@ -77,6 +34,34 @@
       </template>
 
       <template #content>
+        <!-- Quick Stats -->
+        <StatsRow
+          v-if="!loading && offers.length > 0"
+          :stats="[
+            {
+              icon: 'pi pi-box',
+              value: offers.length,
+              label: 'Produktů',
+              variant: 'info',
+              format: 'number'
+            },
+            {
+              icon: 'pi pi-check-circle',
+              value: activeProducts,
+              label: 'Aktivních produktů',
+              variant: 'success',
+              format: 'number'
+            },
+            {
+              icon: 'pi pi-tags',
+              value: totalVariants,
+              label: 'Variant',
+              variant: 'warning',
+              format: 'number'
+            }
+          ]"
+        />
+
         <!-- Loading State -->
         <div v-if="loading" class="loading-state">
           <ProgressSpinner />
@@ -105,12 +90,12 @@
         </div>
 
         <!-- Products Table -->
-        <DataTable 
+        <DataTableWithScroll
           v-else
-          :value="filteredOffers" 
-          :paginator="true" 
-          :rows="50"
-          :rowsPerPageOptions="[50, 100, 1000]"
+          :value="offersWithActiveStatus"
+          :paginator="true"
+          :rows="100"
+          :rowsPerPageOptions="[50, 100, 500, 1000]"
           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
           currentPageReportTemplate="Zobrazeno {first} až {last} z {totalRecords} produktů"
           :sortField="sortField"
@@ -119,14 +104,37 @@
           removableSort
           class="modern-table"
           stripedRows
+          :enableDualScroll="true"
+          v-model:filters="filters"
+          filterDisplay="row"
         >
-          <Column field="id" header="ID" sortable style="width: 80px">
+          <Column field="id" header="ID" sortable style="width: 80px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                type="text"
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="ID"
+                class="p-column-filter"
+                style="width: 100%"
+              />
+            </template>
             <template #body="{ data }">
               <span class="product-id">#{{ data.id }}</span>
             </template>
           </Column>
           
-          <Column field="name" header="Název produktu" sortable>
+          <Column field="name" header="Název produktu" sortable :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                type="text"
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Hledat název..."
+                class="p-column-filter"
+                style="width: 100%"
+              />
+            </template>
             <template #body="{ data }">
               <div class="product-info-with-image">
                 <div class="product-thumbnail-wrapper">
@@ -150,7 +158,16 @@
             </template>
           </Column>
           
-          <Column field="variant_count" header="Varianty" sortable style="width: 100px">
+          <Column field="variant_count" header="Varianty" sortable style="width: 100px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Počet..."
+                class="p-column-filter"
+                type="number"
+              />
+            </template>
             <template #body="{ data }">
               <div class="variant-tag-wrapper" 
                    @mouseenter="(e) => handleVariantHover(e, data.id)"
@@ -210,7 +227,20 @@
             </template>
           </Column>
           
-          <Column field="_isActive" header="Aktivní" sortable style="width: 100px">
+          <Column field="_isActive" header="Aktivní" sortable style="width: 100px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <Select
+                v-model="filterModel.value"
+                @change="filterCallback()"
+                :options="[{label: 'Vše', value: null}, {label: 'ANO', value: true}, {label: 'NE', value: false}]"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Vše"
+                class="p-column-filter"
+                style="width: 100%"
+                showClear
+              />
+            </template>
             <template #body="{ data }">
               <span 
                 class="active-badge"
@@ -221,19 +251,46 @@
             </template>
           </Column>
           
-          <Column field="wholesale_price" header="VO cena" sortable style="width: 110px">
+          <Column field="wholesale_price" header="VO cena" sortable style="width: 110px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Cena..."
+                class="p-column-filter"
+                type="number"
+              />
+            </template>
             <template #body="{ data }">
               <span class="price-cell">{{ formatCurrency(data.wholesale_price || 0) }}</span>
             </template>
           </Column>
           
-          <Column field="_klubPrice" header="Klub podpora" sortable style="width: 120px">
+          <Column field="_klubPrice" header="Klub podpora" sortable style="width: 120px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Podpora..."
+                class="p-column-filter"
+                type="number"
+              />
+            </template>
             <template #body="{ data }">
               <span class="price-cell">{{ formatCurrency(data._klubPrice) }}</span>
             </template>
           </Column>
           
-          <Column field="price" header="Finální cena" sortable style="width: 120px">
+          <Column field="price" header="Finální cena" sortable style="width: 120px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Cena..."
+                class="p-column-filter"
+                type="number"
+              />
+            </template>
             <template #body="{ data }">
               <span class="price-final">{{ formatCurrency(data.price || 0) }}</span>
             </template>
@@ -259,10 +316,10 @@
                   <i class="pi pi-eye"></i>
                 </button>
               </div>
-              
+
             </template>
           </Column>
-        </DataTable>
+        </DataTableWithScroll>
       </template>
     </Card>
 
@@ -499,16 +556,22 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import Chip from 'primevue/chip'
 import Select from 'primevue/select'
 import ProductDetailDialog from '@/components/ProductDetailDialog.vue'
+import StatsRow from '@/components/StatsRow.vue'
+import DataTableWithScroll from '@/components/DataTableWithScroll.vue'
 import { sortVariantsInOffers } from '@/utils/variantSorting'
-import { useTableControls } from '@/composables/useTableControls'
+import { FilterMatchMode } from '@primevue/core/api'
+import InputText from 'primevue/inputtext'
 
 const authStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 
 // State
@@ -524,6 +587,17 @@ const showDetailDialog = ref(false)
 const selectedProduct = ref(null)
 const hoveredVariantId = ref(null)
 const hoverCardPosition = ref({ top: 0, left: 0 })
+
+// Column filters for DataTable
+const filters = ref({
+  id: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  name: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  variant_count: { value: null, matchMode: FilterMatchMode.EQUALS },
+  '_isActive': { value: null, matchMode: FilterMatchMode.EQUALS },
+  wholesale_price: { value: null, matchMode: FilterMatchMode.EQUALS },
+  '_klubPrice': { value: null, matchMode: FilterMatchMode.EQUALS },
+  price: { value: null, matchMode: FilterMatchMode.EQUALS }
+})
 
 // Active filter state
 const activeFilter = ref(null)
@@ -561,22 +635,7 @@ const offersWithActiveStatus = computed(() => {
   }))
 })
 
-const {
-  globalFilter,
-  filters,
-  sortField,
-  sortOrder,
-  filteredData: filteredOffers,
-  setFilter,
-  clearFilter,
-  clearAllFilters,
-  toggleSort,
-  getUniqueValues
-} = useTableControls({
-  data: offersWithActiveStatus,
-  searchFields: ['name', 'sales_offer_name', 'seo', 'variants.name', 'variants.variant_name'],
-  storageKey: 'products_table'
-})
+// Table controls removed
 
 // Computed
 const showOfferDialog = computed({
@@ -876,11 +935,93 @@ watch(() => filters.value._isActive, (newValue) => {
   activeFilter.value = newValue === undefined ? null : newValue
 }, { immediate: true })
 
+// Handle auto-opening product from query parameters
+const handleAutoOpenProduct = async () => {
+  const { openProductId, openProductName } = route.query
+
+  if (!openProductId && !openProductName) return
+
+  // Wait for products to be loaded
+  if (offers.value.length === 0) {
+    await fetchProducts()
+  }
+
+  let productToOpen = null
+
+  // Use the same computed property that the table uses
+  const productsToSearch = offersWithActiveStatus.value
+
+  if (openProductId) {
+    // Debug: log what we're searching for
+    console.log('[Products.vue] Searching for product with ID:', openProductId, 'Type:', typeof openProductId)
+    console.log('[Products.vue] Available product IDs:', productsToSearch.map(o => ({ id: o.id, type: typeof o.id, name: o.sales_offer_name || o.name })))
+
+    // Find product by ID (handle both string and number comparison)
+    productToOpen = productsToSearch.find(offer => {
+      // Convert both to string for comparison to handle type mismatches
+      const offerId = String(offer.id)
+      const searchId = String(openProductId)
+      const matches = offerId === searchId
+      if (!matches) {
+        console.log(`[Products.vue] Comparing ${offerId} === ${searchId}: ${matches}`)
+      }
+      return matches
+    })
+
+    if (productToOpen) {
+      console.log('[Products.vue] Found product:', productToOpen)
+    } else {
+      console.log('[Products.vue] Product not found with ID:', openProductId)
+    }
+  } else if (openProductName) {
+    // Find product by name
+    productToOpen = productsToSearch.find(offer =>
+      offer.sales_offer_name === openProductName || offer.name === openProductName
+    )
+
+    if (!productToOpen) {
+      // Try partial match
+      productToOpen = productsToSearch.find(offer =>
+        offer.sales_offer_name?.includes(openProductName) ||
+        offer.name?.includes(openProductName) ||
+        openProductName.includes(offer.sales_offer_name) ||
+        openProductName.includes(offer.name)
+      )
+    }
+  }
+
+  if (productToOpen) {
+    // Open the product detail modal
+    showProductDetail(productToOpen)
+
+    // Clear the query parameters to avoid reopening on refresh
+    router.replace({
+      path: route.path,
+      query: {}
+    })
+  } else {
+    toast.add({
+      severity: 'warn',
+      summary: 'Produkt nenalezen',
+      detail: `Produkt ${openProductId || openProductName} nebyl nalezen v katalogu`,
+      life: 3000
+    })
+
+    // Clear the query parameters
+    router.replace({
+      path: route.path,
+      query: {}
+    })
+  }
+}
+
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   // Only fetch if we have a salesChannelUrl
   if (authStore.salesChannelUrl) {
-    fetchProducts()
+    await fetchProducts()
+    // Check if we need to auto-open a product
+    handleAutoOpenProduct()
   }
 })
 </script>
@@ -892,59 +1033,7 @@ onMounted(() => {
   gap: 1rem;
 }
 
-/* Stats Row */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.stat-card-mini {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-}
-
-.stat-card-mini:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.stat-mini-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.25rem;
-}
-
-.stat-mini-content {
-  flex: 1;
-}
-
-.stat-mini-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-  line-height: 1;
-}
-
-.stat-mini-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  margin-top: 0.25rem;
-}
+/* Stats handled by StatsRow component */
 
 /* Main Card */
 .products-card {
@@ -1710,6 +1799,89 @@ onMounted(() => {
 :deep(.p-textarea) {
   border-radius: 6px;
   font-size: 0.875rem;
+}
+
+/* Column Filters */
+:deep(.p-column-filter) {
+  width: 100%;
+  font-size: 11px;
+  height: 28px;
+  padding: 0.25rem 0.5rem;
+}
+
+:deep(.p-datatable .p-datatable-thead > tr > th .p-column-filter) {
+  margin-top: 0.5rem;
+}
+
+:deep(.p-datatable .p-datatable-thead > tr > th .p-column-header-content) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:deep(.p-datatable-filter-row) {
+  background: #f9fafb;
+}
+
+:deep(.p-datatable-filter-row td) {
+  padding: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* Select component specific styling */
+:deep(.p-select.p-column-filter) {
+  height: 28px;
+  min-height: 28px;
+  font-size: 11px !important;
+}
+
+:deep(.p-select.p-column-filter .p-select-label) {
+  font-size: 11px !important;
+  padding: 0.25rem 0.5rem;
+  color: #374151;
+}
+
+:deep(.p-select.p-column-filter .p-select-dropdown) {
+  width: 1.5rem;
+  height: 100%;
+}
+
+:deep(.p-select.p-column-filter .p-select-label-container) {
+  font-size: 11px !important;
+}
+
+:deep(.p-select.p-column-filter span) {
+  font-size: 11px !important;
+}
+
+/* Additional aggressive selectors for Select components */
+:deep(.p-select.p-column-filter *) {
+  font-size: 11px !important;
+}
+
+:deep(.p-select.p-column-filter .p-select-label,
+       .p-select.p-column-filter .p-select-placeholder,
+       .p-select.p-column-filter .p-select-option,
+       .p-select.p-column-filter .p-inputtext) {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+
+:deep(th .p-select.p-column-filter) {
+  font-size: 11px !important;
+}
+
+:deep(th .p-select.p-column-filter *) {
+  font-size: 11px !important;
+}
+
+/* Select dropdown option labels */
+:deep(.p-select-option-label) {
+  font-size: 11px !important;
+}
+
+:deep(.p-select-panel .p-select-option-label) {
+  font-size: 11px !important;
 }
 
 /* Responsive */

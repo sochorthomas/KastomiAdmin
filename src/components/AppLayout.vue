@@ -148,15 +148,69 @@
             <div v-if="!sidebarCollapsed" class="menu-section-label">HLAVNÍ MENU</div>
             <div class="menu-items-wrapper">
               <template v-for="item in menuItems" :key="item.label">
-                <!-- Internal route -->
-                <router-link 
-                  v-if="item.route"
-                  :to="item.route" 
-                  v-slot="{ navigate, isActive }" 
+                <!-- Item with children (dropdown) -->
+                <div v-if="item.children && item.children.length > 0"
+                     class="menu-item-with-dropdown"
+                     @mouseenter="hoveredMenuItem = item.label"
+                     @mouseleave="hoveredMenuItem = null">
+                  <!-- Parent item -->
+                  <router-link
+                    v-if="item.route"
+                    :to="item.route"
+                    v-slot="{ navigate, isActive }"
+                    custom
+                  >
+                    <a @click="navigate"
+                       class="menu-item"
+                       :class="{ 'menu-item-active': isActive || isChildActive(item), 'menu-item-collapsed': sidebarCollapsed }"
+                       v-tooltip.right="sidebarCollapsed ? item.label : null">
+                      <div class="menu-item-content">
+                        <span :class="item.icon" class="menu-item-icon" />
+                        <span v-if="!sidebarCollapsed" class="menu-item-label">{{ item.label }}</span>
+                        <span v-if="!sidebarCollapsed && item.children"
+                              class="menu-item-chevron pi"
+                              :class="hoveredMenuItem === item.label ? 'pi-chevron-up' : 'pi-chevron-down'"></span>
+                      </div>
+                      <div v-if="isActive" class="menu-item-indicator"></div>
+                    </a>
+                  </router-link>
+                  <!-- Dropdown submenu -->
+                  <transition name="submenu-slide">
+                    <div v-if="!sidebarCollapsed && hoveredMenuItem === item.label" class="submenu-dropdown">
+                      <router-link
+                        v-for="child in item.children"
+                        :key="child.label"
+                        :to="child.route"
+                        v-slot="{ navigate, isActive }"
+                        custom
+                      >
+                        <a @click="navigate"
+                           class="submenu-item"
+                           :class="{ 'submenu-item-active': isActive }">
+                          <!-- Custom SVG icon for Dresy -->
+                          <svg v-if="child.label === 'Dresy'"
+                               class="submenu-item-icon-svg"
+                               width="16" height="16" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13 1L19 3V8H16V16C16 16.2652 15.8946 16.5196 15.7071 16.7071C15.5196 16.8946 15.2652 17 15 17H5C4.73478 17 4.48043 16.8946 4.29289 16.7071C4.10536 16.5196 4 16.2652 4 16V8H1V3L7 1C7 1.79565 7.31607 2.55871 7.87868 3.12132C8.44129 3.68393 9.20435 4 10 4C10.7956 4 11.5587 3.68393 12.1213 3.12132C12.6839 2.55871 13 1.79565 13 1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8.5 8H11L9.5 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          <span v-else :class="child.icon" class="submenu-item-icon" />
+                          <span class="submenu-item-label">{{ child.label }}</span>
+                          <div v-if="isActive" class="submenu-item-indicator"></div>
+                        </a>
+                      </router-link>
+                    </div>
+                  </transition>
+                </div>
+                <!-- Regular internal route (no children) -->
+                <router-link
+                  v-else-if="item.route && (!item.children || item.children.length === 0)"
+                  :to="item.route"
+                  v-slot="{ navigate, isActive }"
                   custom
                 >
-                  <a @click="navigate" 
-                     class="menu-item" 
+                  <a @click="navigate"
+                     class="menu-item"
                      :class="{ 'menu-item-active': isActive, 'menu-item-collapsed': sidebarCollapsed }"
                      v-tooltip.right="sidebarCollapsed ? item.label : null">
                     <div class="menu-item-content">
@@ -168,8 +222,8 @@
                   </a>
                 </router-link>
                 <!-- External URL -->
-                <a v-else-if="item.url" 
-                   :href="item.url" 
+                <a v-else-if="item.url"
+                   :href="item.url"
                    :target="item.external ? '_blank' : '_self'"
                    class="menu-item"
                    :class="{ 'menu-item-collapsed': sidebarCollapsed }"
@@ -316,6 +370,7 @@ const dateFrom = ref(null)
 const dateTo = ref(new Date())
 const dashboardLoading = ref(false)
 const dresyCount = ref(0)
+const hoveredMenuItem = ref(null)
 
 // Menu items
 const menuItems = computed(() => {
@@ -333,19 +388,30 @@ const menuItems = computed(() => {
     {
       label: 'Objednávky',
       icon: 'pi pi-fw pi-shopping-cart',
-      route: '/objednavky'
+      route: '/objednavky',
+      // Add submenu items if dresy count > 0
+      children: dresyCount.value > 0 ? [
+        {
+          label: 'Dresy',
+          icon: null, // Using custom SVG instead
+          route: '/dresy'
+        }
+      ] : null
     }
   ]
+  // Add Provize to menu
+  items.push({
+    label: 'Provize',
+    icon: 'pi pi-fw pi-percentage',
+    route: '/provize'
+  })
   
-  // Only show Dresy if there are records
-  if (dresyCount.value > 0) {
-    items.push({
-      label: 'Dresy',
-      icon: 'pi pi-fw pi-tag',
-      route: '/dresy'
-    })
-  }
-  
+  // Add Shop Edit Mode
+  items.push({
+    label: 'E-shop (Edit Mode)',
+    icon: 'pi pi-fw pi-shopping-bag',
+    route: '/shop'
+  })
   
   items.push({
     label: 'StanApp',
@@ -354,6 +420,7 @@ const menuItems = computed(() => {
     external: true
   })
   
+
   // Add external links
   items.push({
     label: 'Service Desk',
@@ -369,15 +436,24 @@ const breadcrumbItems = computed(() => {
   const items = [
     { label: 'Home', route: '/prehled', icon: 'pi pi-home' }
   ]
-  
+
   if (route.name === 'Products') {
     items.push({ label: 'Produkty' })
   } else if (route.name === 'Orders') {
     items.push({ label: 'Objednávky' })
   } else if (route.name === 'Dresy') {
+    items.push({ label: 'Objednávky', route: '/objednavky' })
     items.push({ label: 'Dresy' })
+  } else if (route.name === 'Provize') {
+    items.push({ label: 'Provize' })
+  } else if (route.name === 'ProvizeDetail') {
+    items.push({ label: 'Provize', route: '/provize' })
+    items.push({ label: `Provize #${route.params.id}` })
+  } else if (route.name === 'ProvizeNew') {
+    items.push({ label: 'Provize', route: '/provize' })
+    items.push({ label: 'Nová provize' })
   }
-  
+
   return items
 })
 
@@ -543,19 +619,29 @@ const updateBrowserFavicon = (faviconUrl) => {
 // Refresh dashboard is now handled by handleDateChange
 
 // Fetch sales channel data to get logo
+// Helper function to check if any child route is active
+const isChildActive = (item) => {
+  if (!item.children) return false
+  const currentPath = route.path
+  return item.children.some(child => child.route === currentPath)
+}
+
 const checkDresyCount = async () => {
   try {
-    if (!authStore.salesChannelUrl) return
-    
-    // Call edge function to get dresy count
+    if (!authStore.salesChannelId) return
+
+    console.log('Checking dresy count for channel:', authStore.salesChannelId)
+
+    // Call edge function to get dresy count using report 19
     const { data, error } = await supabase.functions.invoke('get-dresy-count', {
       body: {
-        sales_channel_url: authStore.salesChannelUrl
+        sales_channel_id: authStore.salesChannelId
       }
     })
-    
+
     if (!error && data) {
       dresyCount.value = data.count || 0
+      console.log('Dresy count:', dresyCount.value)
     }
   } catch (err) {
     console.log('Could not fetch dresy count:', err)
@@ -658,6 +744,9 @@ onMounted(() => {
 // Watch for sales channel URL changes
 watch(() => authStore.salesChannelUrl, () => {
   fetchSalesChannelData()
+})
+
+watch(() => authStore.salesChannelId, () => {
   checkDresyCount()
 })
 </script>
@@ -1092,6 +1181,99 @@ watch(() => authStore.salesChannelUrl, () => {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
+/* Dropdown menu styles */
+.menu-item-with-dropdown {
+  position: relative;
+}
+
+.menu-item-chevron {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover .menu-item-chevron {
+  color: #667eea;
+}
+
+.submenu-dropdown {
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+  margin-left: 1.75rem;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  color: #4b5563;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.submenu-item:hover {
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+}
+
+.submenu-item-active {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  font-weight: 500;
+}
+
+.submenu-item-icon {
+  font-size: 0.875rem;
+  width: 16px;
+  margin-right: 0.625rem;
+  text-align: center;
+}
+
+.submenu-item-icon-svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 0.625rem;
+  flex-shrink: 0;
+}
+
+.submenu-item-label {
+  font-size: 0.8125rem;
+}
+
+.submenu-item-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 16px;
+  background: #667eea;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Submenu slide transition */
+.submenu-slide-enter-active,
+.submenu-slide-leave-active {
+  transition: all 0.2s ease;
+  transform-origin: top;
+}
+
+.submenu-slide-enter-from {
+  opacity: 0;
+  transform: scaleY(0.95) translateY(-5px);
+}
+
+.submenu-slide-leave-to {
+  opacity: 0;
+  transform: scaleY(0.95) translateY(-5px);
+}
+
 
 /* Main Content Area */
 .layout-main {
@@ -1239,15 +1421,21 @@ watch(() => authStore.salesChannelUrl, () => {
 /* Content Area */
 .layout-content {
   flex: 1;
-  padding: 1.25rem;
+  padding: var(--section-padding-desktop);
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
 }
 
+@media (max-width: 1024px) {
+  .layout-content {
+    padding: var(--section-padding-tablet);
+  }
+}
+
 @media (max-width: 768px) {
   .layout-content {
-    padding: 0.75rem;
+    padding: var(--section-padding-mobile);
   }
 }
 
@@ -1445,5 +1633,168 @@ watch(() => authStore.salesChannelUrl, () => {
 :deep(.p-button-text:hover) {
   background: rgba(0, 0, 0, 0.04);
   color: #495057;
+}
+
+/* Global Card Styles - Desktop First */
+:deep(.p-card) {
+  position: relative;
+  overflow: visible;
+  padding: 0 !important; /* Remove card padding to allow full-width header */
+}
+
+:deep(.p-card .p-card-header) {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 10;
+  margin: 0;
+  padding: 0;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+:deep(.p-card .p-card-body) {
+  padding: var(--card-padding-desktop);
+}
+
+/* Global Section Padding - with deep selector for scoped components */
+/* Note: Removed payout-create-section, payouts-section, and items-section to allow view-specific styling */
+:deep(.summary-section),
+:deep(.submit-section),
+:deep(.submit-info) {
+  padding: var(--section-padding-desktop) !important;
+}
+
+/* Section header needs consistent spacing */
+:deep(.section-header) {
+  padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) !important;
+}
+
+/* Consistent spacing for all view containers */
+:deep(.view-container) {
+  padding: var(--section-padding-desktop);
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) {
+  :deep(.p-card .p-card-header) {
+    padding: 0;
+  }
+
+  :deep(.p-card .p-card-body) {
+    padding: var(--card-padding-tablet);
+  }
+
+  :deep(.summary-section),
+  :deep(.submit-section),
+  :deep(.submit-info) {
+    padding: var(--section-padding-tablet) !important;
+  }
+
+  :deep(.view-container) {
+    padding: var(--section-padding-tablet);
+  }
+
+  :deep(.section-header) {
+    padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md) !important;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  :deep(.p-card .p-card-header) {
+    padding: 0;
+  }
+
+  :deep(.p-card .p-card-body) {
+    padding: var(--card-padding-mobile);
+  }
+
+  :deep(.summary-section),
+  :deep(.submit-section),
+  :deep(.submit-info) {
+    padding: 1.5rem var(--spacing-sm) !important;
+  }
+
+  :deep(.view-container) {
+    padding: var(--section-padding-mobile);
+  }
+
+  :deep(.section-header) {
+    padding: 0 var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) !important;
+  }
+}
+
+/* Toast Responsive Fixes */
+@media (max-width: 768px) {
+  :deep(.p-toast) {
+    width: calc(100vw - 1rem) !important;
+    max-width: 100% !important;
+    right: 0.5rem !important;
+    left: 0.5rem !important;
+    top: 0.5rem !important;
+  }
+
+  :deep(.p-toast .p-toast-message) {
+    margin: 0.25rem 0;
+    width: 100%;
+  }
+
+  :deep(.p-toast .p-toast-message-content) {
+    padding: 0.75rem;
+  }
+
+  :deep(.p-toast .p-toast-message-text) {
+    font-size: 0.875rem;
+    word-wrap: break-word;
+    word-break: break-word;
+  }
+
+  :deep(.p-toast .p-toast-summary) {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  :deep(.p-toast .p-toast-detail) {
+    font-size: 0.813rem;
+    margin-top: 0.25rem;
+  }
+
+  :deep(.p-toast .p-toast-icon) {
+    font-size: 1.25rem;
+  }
+
+  :deep(.p-toast .p-toast-icon-close) {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.p-toast) {
+    width: calc(100vw - 0.5rem) !important;
+    right: 0.25rem !important;
+    left: 0.25rem !important;
+    top: 0.25rem !important;
+  }
+
+  :deep(.p-toast .p-toast-message-content) {
+    padding: 0.5rem;
+  }
+
+  :deep(.p-toast .p-toast-message-text) {
+    font-size: 0.813rem;
+  }
+
+  :deep(.p-toast .p-toast-summary) {
+    font-size: 0.813rem;
+  }
+
+  :deep(.p-toast .p-toast-detail) {
+    font-size: 0.75rem;
+  }
 }
 </style>

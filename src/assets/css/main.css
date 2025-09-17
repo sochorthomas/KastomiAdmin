@@ -69,14 +69,29 @@
   --text-muted: #9ca3af;
   --text-white: #ffffff;
   
-  /* Spacing */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
-  --spacing-3xl: 4rem;
+  /* Spacing - Enhanced for better consistency */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-3xl: 4rem;     /* 64px */
+  --spacing-4xl: 6rem;     /* 96px */
+
+  /* Section spacing - for consistent page layouts */
+  --section-padding-mobile: 1rem;
+  --section-padding-tablet: 1.5rem;
+  --section-padding-desktop: 2rem;
+
+  /* Card spacing - for consistent card components */
+  --card-padding-mobile: 1rem;
+  --card-padding-tablet: 1.5rem;
+  --card-padding-desktop: 2rem;
+
+  /* Content spacing - for consistent content areas */
+  --content-gap: 1.5rem;
+  --content-gap-large: 2rem;
   
   /* Font sizes */
   --text-xs: 0.75rem;
@@ -593,11 +608,25 @@ a:hover {
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-100);
   overflow: hidden;
+  position: relative;
+  padding: 0; /* Remove default padding to allow full-width header */
 }
 
 .p-card-header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--gray-200);
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  right: 0;
+}
+
+.p-card-body {
+  padding: var(--card-padding-desktop);
 }
 
 .p-dialog {
@@ -764,6 +793,69 @@ a:hover {
   }
 }
 
+/* Global Spacing Utility Classes */
+.section-spacing {
+  padding: var(--section-padding-desktop);
+}
+
+.card-spacing {
+  padding: var(--card-padding-desktop);
+}
+
+.content-spacing {
+  gap: var(--content-gap);
+}
+
+/* Consistent padding classes */
+.p-section { padding: var(--section-padding-desktop); }
+.px-section { padding-left: var(--section-padding-desktop); padding-right: var(--section-padding-desktop); }
+.py-section { padding-top: var(--section-padding-desktop); padding-bottom: var(--section-padding-desktop); }
+
+/* Note: .p-card padding removed to allow full-width headers */
+.px-card { padding-left: var(--card-padding-desktop); padding-right: var(--card-padding-desktop); }
+.py-card { padding-top: var(--card-padding-desktop); padding-bottom: var(--card-padding-desktop); }
+
+/* Margin utilities */
+.mb-section { margin-bottom: var(--content-gap-large); }
+.mt-section { margin-top: var(--content-gap-large); }
+
+/* Responsive spacing overrides */
+@media (max-width: 1024px) {
+  .section-spacing {
+    padding: var(--section-padding-tablet);
+  }
+
+  .card-spacing {
+    padding: var(--card-padding-tablet);
+  }
+
+  .p-section { padding: var(--section-padding-tablet); }
+  .px-section { padding-left: var(--section-padding-tablet); padding-right: var(--section-padding-tablet); }
+  .py-section { padding-top: var(--section-padding-tablet); padding-bottom: var(--section-padding-tablet); }
+
+  /* Note: .p-card padding removed to allow full-width headers */
+  .px-card { padding-left: var(--card-padding-tablet); padding-right: var(--card-padding-tablet); }
+  .py-card { padding-top: var(--card-padding-tablet); padding-bottom: var(--card-padding-tablet); }
+}
+
+@media (max-width: 768px) {
+  .section-spacing {
+    padding: var(--section-padding-mobile);
+  }
+
+  .card-spacing {
+    padding: var(--card-padding-mobile);
+  }
+
+  .p-section { padding: var(--section-padding-mobile); }
+  .px-section { padding-left: var(--section-padding-mobile); padding-right: var(--section-padding-mobile); }
+  .py-section { padding-top: var(--section-padding-mobile); padding-bottom: var(--section-padding-mobile); }
+
+  /* Note: .p-card padding removed to allow full-width headers */
+  .px-card { padding-left: var(--card-padding-mobile); padding-right: var(--card-padding-mobile); }
+  .py-card { padding-top: var(--card-padding-mobile); padding-bottom: var(--card-padding-mobile); }
+}
+
 /* Print styles */
 @media print {
   .layout-sidebar,
@@ -771,11 +863,11 @@ a:hover {
   .no-print {
     display: none !important;
   }
-  
+
   .layout-main {
     margin: 0;
   }
-  
+
   .layout-content {
     max-width: 100%;
     padding: 0;

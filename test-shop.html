@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Shop</title>
+</head>
+<body>
+    <h1>Shop Test Page</h1>
+    <p>If you see this, the HTML loads correctly.</p>
+    <p>Open browser console (F12) to check for JavaScript errors.</p>
+    <p>Shop URL: <a href="/shop.html">/shop.html</a></p>
+    
+    <script type="module">
+        // Test if Vue loads
+        import { createApp } from 'vue';
+        console.log('Vue loaded successfully');
+        
+        // Test if router loads
+        import router from '/src/router/shop.js';
+        console.log('Router loaded:', router);
+    </script>
+</body>
+</html>

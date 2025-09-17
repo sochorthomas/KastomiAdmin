@@ -1,0 +1,1449 @@
+{block content}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.8.2/css/lightbox.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.8.2/js/lightbox.min.js"></script>
+<script>
+    let barva_hex = '';
+</script>
+
+{if $row['sales_offer_status_id'] != 2}<form method="post" action="{if count($row['reservation']) == 0}{link skladDoKosiku}{else}{link rezervaceDokoncit}{/if}" id="form_pridat">{/if}
+
+               <style>
+                   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
+
+                   #nahled_text {
+                       font-family: 'Oswald', sans-serif;
+                   }
+                   #own_text{
+                       overflow: hidden;
+                       transition: all 1s ease-in;
+                   }
+                   .label-text-heading{
+                       text-transform: uppercase;
+                       color: #4f4f4f;
+                       font-weight: normal;
+                   }
+               </style>
+    <div class="container">
+
+        <div class="row" style="padding-bottom: 18px;">
+            <p>
+                <a class="breadcrumb__item" n:href="sales">{$salesChannel['name']}</a>
+                <a n:if="isset($row['kategorie'][0])" class="breadcrumb__item" href="{link sales}#cat{$row['kategorie'][0]['id']}">{$row['kategorie'][0]['name']}</a>
+                <a class="breadcrumb__item" n:href="this">{$row['name']}</a>
+            </p>
+        </div>
+
+
+        <div class="detail-top">
+            <div class="detail-photos" style="position: relative">
+                <a n:if="$hlavni_obrazek" data-lightbox="photos" href="https://cdn.kastomi.com/{$hlavni_obrazek}" style="position: relative" id="main-image-link">
+                    {* vygenerovat obaly pro Kastomi napisy *}
+                    {foreach $row['kastomi'] as $kastomi}
+                        {if $kastomi['internal'] == 'on_product'}
+                            <div id="kastomizace-text-{$kastomi['id']}"></div>
+                            {* pokud mam druhe misto *}
+                            {if isset($kastomi["settings"]["Top 2 - %"])}
+                                <div id="kastomizace-text2-{$kastomi['id']}"></div>
+                            {/if}
+                        {/if}
+                    {/foreach}
+                  <img src="https://cdn.kastomi.com/{$hlavni_obrazek}" id="main-image" class="detail-product-image" />
+
+                </a>
+                <div class="photo-row">
+                    <div n:foreach="$dalsi_obrazky as $dalsi_obrazek">
+                        <a data-lightbox="photos" href="https://cdn.kastomi.com/{$dalsi_obrazek}">
+                            <img class="detail-product-image" src="https://cdn.kastomi.com/{$dalsi_obrazek}">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-info">
+
+                <div>
+                    <h2>{$row['name']}</h2>
+
+
+                </div>
+
+{* parametry nabídky *}
+{var $salesOfferDodavatel = ''}
+{var $salesOfferGender = ''}
+{var $salesOfferKastomizace = ''}
+{var $salesOfferSizingTable = ''}
+
+    {foreach $row["params"] as $p}
+        {if $p["param"]["name"] == "Dodavatel"}
+            {var $salesOfferDodavatel = $p['val']}
+        {/if}
+        {if $p["param"]["name"] == "Pro koho?"}
+            {var $salesOfferGender = $p['val']}
+        {/if}
+        {if $p["param"]["name"] == "Sizing table image"}
+            {var $salesOfferSizingTable = $p['val']}
+        {/if}
+    {/foreach}
+
+
+{if $salesOfferGender == 'Unisex' or $salesOfferGender == ''}{var $salesOfferGenderIcon = 'unisex'}
+{elseif $salesOfferGender == 'Dětské' or $salesOfferGender == 'Děti'}{var $salesOfferGenderIcon = 'kids'}
+{elseif $salesOfferGender == 'Pánské' or $salesOfferGender == 'Muži'}{var $salesOfferGenderIcon = 'men'}
+{elseif $salesOfferGender == 'Dámské' or $salesOfferGender == 'Ženy'}{var $salesOfferGenderIcon = 'women'}
+{/if}
+
+
+
+{* parametry variant *}
+{php $variants = []}
+{php $variants_for_sort = []}
+{foreach $row['variants'] as $v}
+    {php $variants[$v['id']] = $v}
+    {php $variants_for_sort[$v['id']] = $v["variant"]}
+{/foreach}
+
+{var $serazeno = seraditVariantyNechat($variants_for_sort)}
+{var $colorDetails = []}
+{var $gender = ''}
+
+
+{foreach $serazeno as $vv_porovnat}
+    {foreach $row['variants'] as $vv}
+        {if $vv['variant'] == $vv_porovnat}
+
+            {var $colorPreview = ''}
+            {var $colorName = ''}
+
+            {php $dostupnost = $dostupnost_barva = false}
+            {foreach $vv['params'] as $param}
+                {if $param['param']['internal'] == 'dostupnost'}
+                    {var $dostupnost = $param['val']}
+                {/if}
+                {if $param['param']['internal'] == 'dostupnost_barva'}
+                    {var $dostupnost_barva = $param['val']}
+                {/if}
+                {if $param['param']['name'] == 'Pohlaví'}
+                    {php $gender = $param['val'];}
+                {/if}
+                {if $param['param']['name'] == 'Barva - HEX'}
+                    {var $colorPreview = $param['val']}
+                {/if}
+                {if $param['param']['name'] == 'Barva - pojmenování'}
+                    {var $colorName = $param['val']}
+                {/if}
+                {if $param['param']['name'] == 'SalesOfferVariantImage'}
+                    {var $newSrc = $param['val']}
+                {/if}
+            {/foreach}
+            {if $gender == "Pánské"}
+                {var $men = true}
+            {/if}
+            {if $gender == "Dámské"}
+                {var $women = true}
+            {/if}
+            {if $gender == "Dětské"}
+                {var $kids = true}
+            {/if}
+            {if $gender == "Unisex"}
+                {var $unisex = true}
+            {/if}
+            {if $gender == ""}
+                {var $noGender = true}
+            {/if}
+            {if $colorPreview && $colorName && $newSrc}
+                {var $colorDetails[] = ['hex' => $colorPreview, 'name' => $colorName, 'image' => $newSrc]}
+            {/if}
+        {/if}
+    {/foreach}
+    {$gender = ''}
+
+{/foreach}
+
+
+    {* filtrovaci skripty *}
+    <script n:syntax="off">
+        // Global array to store filter criteria
+        var filterCriteria = [];
+        var selectedVariantId = false;
+        var pocetFiltrovani = 0;
+
+        function filtrDleParametru(element, parametr, hodnota) {
+
+            // remove class zvoleny_parametr from all element with same data-filtr-parametr
+            var elements = document.querySelectorAll('[data-filtr-parametr="' + parametr + '"]');
+            elements.forEach(function(element) {
+                element.classList.remove('zvoleny_parametr');
+            });
+
+
+            // add class zvoleny_parametr to the clicked element
+            element.classList.add('zvoleny_parametr');
+
+
+            // Add or update the filter criteria
+            var existingCriteria = filterCriteria.find(criteria => criteria.parametr === parametr);
+            if (existingCriteria) {
+                existingCriteria.hodnota = hodnota;
+            } else {
+                filterCriteria.push({ parametr: parametr, hodnota: hodnota });
+            }
+
+            pocetFiltrovani++;
+
+            if(pocetFiltrovani > 1) {
+                $("#zrusitFiltry").css("display", "block");
+            }
+
+            // Apply the filter
+            provedFiltr(parametr, hodnota);
+        }
+
+        // Filter elements based on the criteria in the global array
+        function provedFiltr(actual_parametr, actual_hodnota) {
+            var varianty = document.getElementsByClassName('varianta_obal');
+
+            for (var i = 0; i < varianty.length; i++) {
+                var variant = varianty[i];
+                var show = true;
+
+                // Check if the element matches all filter criteria
+                for (var j = 0; j < filterCriteria.length; j++) {
+                    var criteria = filterCriteria[j];
+                    if (variant.getAttribute('data-' + criteria.parametr) != criteria.hodnota) {
+                        show = false;
+                        break;
+                    }
+                }
+
+                // Show or hide the element based on the filter criteria
+                variant.style.display = show ? 'block' : 'none';
+            }
+
+            // chechk wich variant is visible and get vlaue of this option to selectedVariantId - only if there is only one visible variant
+            var visibleVariants = Array.from(varianty).filter(variant => variant.style.display === 'block');
+
+            if(visibleVariants.length === 1){
+                selectedVariantId = visibleVariants[0].querySelector('input').value;
+            } else {
+                selectedVariantId = false;
+            }
+
+            var visibleVariants = Array.from(document.querySelectorAll('.varianta_obal')).filter(variant => variant.style.display !== 'none');
+
+            // projit viditelne varianty, do pole si dat vsechny data-sales_offer_variant_image a pokud uz jsou vsechny stejne, tak prepnout obrazek
+            var images = visibleVariants
+                .map(variant => variant.getAttribute('data-sales_offer_variant_image'))
+                .filter(image => image !== null);
+
+
+            // pokud vubec obrazky jsou
+                if (images.every(image => image === images[0])) {
+                    if (images.length > 0 && images[0].length > 0) {
+                        changeImageSrc(visibleVariants[0], images[0]);
+                    }
+                }
+
+
+
+            // pokud ma vybrana varianta konkrenti obrazek
+            if(selectedVariantId != false) {
+                var element = document.querySelector('[data-varianta-id="' + selectedVariantId + '"]');
+                if(element.getAttribute('data-sales_offer_variant_image')) {
+                    changeImageSrc(element, element.getAttribute('data-sales_offer_variant_image'));
+                }
+            }
+
+
+            // projit visibleVariants a sestavit z toho pole kde klic bude parametr a hodnoty budou ty, ktere u jednotlivych variant zbyvaji. pote skryt vsechny parametry, ktere uz nejsou u viditelnych variant - parametry jsou jako data-<nazev_parametru>
+            // Krok 1: Získání viditelných variant
+
+
+// Krok 2: Extrakce parametrů
+            var visibleVariantsParams = visibleVariants.map(variant => {
+                return Array.from(variant.attributes)
+                    .filter(attr => attr.name.startsWith('data-'))
+                    .reduce((acc, attr) => {
+                        const paramName = attr.name.substring(5); // Odebrání 'data-' z názvu parametru
+                        if (!acc[paramName]) {
+                            acc[paramName] = [];
+                        }
+                        acc[paramName].push(attr.value);
+                        return acc;
+                    }, {});
+            });
+
+// Krok 3: Slučování parametrů
+            var mergedParams = visibleVariantsParams.reduce((acc, params) => {
+                for (let key in params) {
+                    if (!acc[key]) {
+                        acc[key] = new Set();
+                    }
+                    params[key].forEach(value => acc[key].add(value));
+                }
+                return acc;
+            }, {});
+
+// Převod Set na pole
+            for (let key in mergedParams) {
+                mergedParams[key] = Array.from(mergedParams[key]);
+            }
+
+
+            // schovat filtry, ktere uz ted neplati
+            filterParameters(actual_parametr, actual_hodnota, mergedParams);
+
+            // pro testovani
+            if(selectedVariantId != false) {
+                //alert("variatnu vime: "+selectedVariantId);
+
+                // najit element podle data-varianta-id
+                var element = document.querySelector('[data-varianta-id="' + selectedVariantId + '"]');
+
+                // pokud existuje data-dostupnost, tak nacist
+                if(element.getAttribute('data-dostupnost')) {
+                    $("#dostupnost").html(element.getAttribute('data-dostupnost'));
+
+                    if(element.getAttribute('data-dostupnost_barva')) {
+                        $("#dostupnost").css("color", element.getAttribute('data-dostupnost_barva'));
+                    } 
+                    else{
+                         $("#dostupnost").css("color", "#000");
+                    }
+                } else {
+                    $("#dostupnost").html("");
+                }
+
+
+
+            }
+
+        }
+
+
+        function filterParameters(actual_parametr, actual_hodnota, mergedParams) {
+
+            console.log("funkce: filterParameters");
+            console.log(actual_parametr);
+            console.log(mergedParams);
+
+            var paramElements = document.querySelectorAll('.parametr');
+
+            paramElements.forEach(element => {
+                var paramName = element.getAttribute('data-parametr');
+                var paramValue = element.getAttribute('data-hodnota');
+
+                // Přeskočit aktuálně přepnutý parametr - tam nechat vsechny, ktere validni byly
+                if (paramName === actual_parametr) {
+                    if(paramValue != actual_hodnota) {
+                        console.log("odebiram pro: " + paramName + ":" + actual_parametr);
+                        element.classList.remove('zvoleny_parametr'); // nesmi jen zustat aktivni
+                    }
+                    return;
+                }
+
+                // Zkontrolovat, zda hodnota parametru je v seznamu zbývajících hodnot
+                if (mergedParams[paramName] && mergedParams[paramName].includes(paramValue)) {
+
+                    element.classList.add('parametr_aktivni');
+                    element.classList.remove('parametr_neaktivni');
+
+                } else {
+
+                    element.classList.remove('parametr_aktivni');
+                    element.classList.add('parametr_neaktivni');
+
+                }
+            });
+        }
+
+        function zrusitFiltry() {
+
+            // Reset filter criteria
+            filterCriteria = [];
+
+            var paramElements = document.querySelectorAll('.parametr');
+
+            paramElements.forEach(element => {
+
+                element.classList.remove('zvoleny_parametr');
+                element.classList.remove('parametr_neaktivni');
+                element.classList.add('parametr_aktivni');
+
+            });
+
+            selectedVariantId = false;
+
+            $("#zrusitFiltry").hide();
+            pocetFiltrovani = 0;
+
+        }
+
+
+    </script>
+
+{var $colorDetails = []}
+
+                {* mozna jeste pouzijeme *}
+<script>
+
+     function changeImageSrc(element, newSrc) {
+        var mainImage = document.getElementById("main-image");
+        var mainImageLink = document.getElementById("main-image-link");
+
+        mainImageLink.href = "https://bob.kastomi.com/files/" + newSrc;
+        mainImage.src = "https://bob.kastomi.com/files/" + newSrc;
+
+    }
+</script>
+
+
+{* podle toho, jestli je default nebo ne *}
+                <script>
+                    document.addEventListener('DOMContentLoaded', (event) => {
+                        toggleSwitch();
+                    });
+                </script>
+
+
+<br>
+
+<div class="sales-offer-div">
+
+                {* jedna se o produkt k rezervaci nebo ne? *}
+                {if count($row['reservation']) == 0}
+
+               <div style="width: 100%">
+                    <div id="obal_kosik" class="tabcontent left active">
+
+               {* tabulka, ktera se interne pouziva k filtrovani hodnot - je ale skryta *}
+               {var $pocet_variant = 0}
+               <table style="display: none;" class="table">
+                    {foreach $row['variants'] as $v}{sep}{/sep}{/foreach}
+
+                    {php $variants = []}
+                    {php $variants_for_sort = []}
+                    {foreach $row['variants'] as $v}
+                        {php $variants[$v['id']] = $v}
+                        {php $variants_for_sort[$v['id']] = $v["variant"]}
+                    {/foreach}
+
+                    {var $serazeno = seraditVariantyNechat($variants_for_sort)}
+                    {var $v_size = ''}
+                    {foreach $serazeno as $vv_porovnat}
+                        {foreach $row['variants'] as $vv}
+                            {php $pocet_variant++ }
+                            {if $vv['variant'] == $vv_porovnat}
+                                {php $dostupnost = $dostupnost_barva = false}
+                                {foreach $vv['params'] as $param}
+                                    {if $param['param']['internal'] == 'velikost'}
+                                        {var $v_size = $param['val']}
+                                    {/if}
+                                    {if $param['param']['internal'] == 'dostupnost'}
+                                        {var $dostupnost = $param['val']}
+                                    {/if}
+                                    {if $param['param']['internal'] == 'dostupnost_barva'}
+                                        {var $dostupnost_barva = $param['val']}
+                                    {/if}
+                                    {if $param['param']['name'] == 'Pohlaví'}
+                                        {var $gender = $param['val']}
+                                    {/if}
+                                    {if $param['param']['name'] == 'Barva - pojmenování'}
+                                        {var $varColor = $param['val']}
+                                    {/if}
+                                {/foreach}
+
+
+                                    <tr class="rowTab varianta_obal" data-varianta-id="{$vv['id']}" {foreach $vv['params'] as $p}data-{php print $p['param']['internal']}={$p['val']} {/foreach}>
+                                        <td>
+                                            <input {if count($variants) == 1}checked{/if} style="margin-left: 10px;" type="radio" name="sales_offer_variant_id" value="{$vv['id']}" id="v{$iterator->counter}" />
+                                            <label for="v{$iterator->counter}">{if $v_size != ''}{$v_size}{else}{$v["variant"]}{/if}</label>
+                                        </td>
+                                        <td>
+                                            <img n:if='$gender == "Pánské"' src="https://kastomi.kastomi.com/images/men.svg" title="{$gender}" />
+                                            <img n:if='$gender == "Dámské"' src="https://kastomi.kastomi.com/images/women.svg" title="{$gender}" />
+                                            <img n:if='$gender == "Dětské"' src="https://kastomi.kastomi.com/images/kids.svg" title="{$gender}" />
+                                            <img n:if='$gender == "Unisex" || $gender == ""' src="https://kastomi.kastomi.com/images/{$salesOfferGenderIcon}.svg" title="{$gender}" />
+                                        </td>
+                                        <td>
+
+                                        </td>
+                                    </tr>
+
+                                
+                            {/if}
+                            {$gender = ''}
+                        {/foreach}
+                    {/foreach}
+                </table>
+
+                        {if $pocet_variant == 1}
+                        <script>
+                            $(document).ready(function() {
+                                selectedVariantId = {$row['variants'][0]['id']};
+
+                                {foreach $row['variants'][0]['params'] as $param}
+                                {if $param['param']['internal'] == 'dostupnost'}
+                                    $("#dostupnost").html("{php print $param['val']}");
+                                {/if}
+                                {/foreach}
+
+                            });
+                        </script>
+                        {/if}
+
+
+                        {* 1. parametry, ktere maji byt zobrazene *}
+                        {* musim ji pres prvni variantu - tam jsou parametry co hledam - jinak jsou to ty spolecne nadrazene u kterych neni duvod filtrovat *}
+                        {var $pocet_parametru = 0}
+                        {foreach $row['variants'][0]['params'] as $param}
+
+                            {if $param['param']['filter'] == 1}
+                                {php $pocet_parametru++}
+                                {if $param['param']['internal'] == 'barva_hex'}
+                                    {php $param['param']['name'] = 'Barva'}
+                                {/if}
+                                <span style="font-weight: bold; float: left; margin: 10px 10px 0px 0px; padding: 10px 10px 0px 0px;">{$param['param']['name']}</span>
+                                <br style="clear: both" />
+                                {var $uz_bylo = []}
+                                {var $pole_hodnot = []}
+
+                                {foreach $row['variants'] as $variant}
+                                    {foreach $variant['params'] as $p}
+                                        {if ($p['param']['id'] == $param['param']['id']) && !in_array($p['val'], $uz_bylo)}
+                                            {php $uz_bylo[] = $p['val']}
+                                            {php $pole_hodnot[] = $p}
+                                        {/if}
+                                    {/foreach}
+                                {/foreach}
+
+                                {var $sortedData = sortByOrderMap($pole_hodnot, true)}
+                                {foreach $sortedData as $p}
+
+                                    <span {if $p['param']['internal'] == 'barva_hex'}style="background: {php print $p['val']}"{/if} class="{if $p['param']['internal'] == 'barva_hex'}parametr_barva {/if}parametr" data-hodnota="{$p['val']}" data-parametr="{$p['param']['internal']}" onclick="filtrDleParametru(this, {$p['param']['internal']}, {$p['val']})">
+
+                                                {if $p['param']['internal'] == 'barva_hex'}
+                                                    {php $p['val'] = ''}
+                                                {/if}
+
+                                        {if $p['param']['internal'] == 'pohlavi'}<img n:if='$p["val"] == "Pánské"' src="https://kastomi.kastomi.com/images/men.svg" class="ikona-pohlavi" title="{$gender}" />
+                                            <img n:if='$p["val"] == "Dámské"' src="https://kastomi.kastomi.com/images/women.svg" class="ikona-pohlavi" title="{$gender}" />
+                                            <img n:if='$p["val"] == "Dětské"' src="https://kastomi.kastomi.com/images/kids.svg" class="ikona-pohlavi" title="{$gender}" />
+                                            <img n:if='$p["val"] == "Unisex" || $p["val"] == ""' src="https://kastomi.kastomi.com/images/{$salesOfferGenderIcon}.svg" class="ikona-pohlavi" title="{$gender}" />{/if}
+
+                                        {$p['val']}{* standardni vypis hodnoty *}
+                                    </span>
+
+                                {/foreach}
+
+                                <br style="clear: both" />
+                            {/if}
+
+                        {/foreach}
+
+                        <style>
+                          
+
+                        </style>
+
+                        {if $pocet_parametru > 1}
+                            <a id="zrusitFiltry" onclick="zrusitFiltry()" style="font-size: 76%" class="btn btn-warning btn-sm"><i style="font-size: 80%;" class="fas fa-sync"></i> Začít s výběrem parametrů znovu</a>
+                        {/if}
+
+                        {if $pocet_parametru > 0}
+                            <br style="clear: both" />
+                        {/if}
+
+
+                        {* 2. pokud jsou mozne nejake kastomizace produktu *}
+                        <div id="kastomizace-obal" n:if="count($row['kastomi']) > 0">
+
+                            <script>
+                                $(document).ready(function() {
+                                    $('.kastomizace_ukazat').on('click', function() {
+                                        var kastomizaceId = $(this).data('kastomizace-id');
+                                        $('.kastomizace-' + kastomizaceId).toggle(); // Zobrazit nebo skrýt odpovídající div
+                                    });
+                                });
+                            </script>
+
+                            <p style="font-weight: bold;"><i class="far fa-regular fa-user-edit"></i> Personalizace obsahu</p>
+
+                            {foreach $row['kastomi'] as $kastomi}
+                            {if $kastomi['required'] == 0}
+
+                                <label class="switch">
+                                    <input type="checkbox" class="kastomizace_ukazat" data-kastomizace-id="{$kastomi['id']}" id="toggle-switch" onclick="toggleSwitch()" data-gtm-form-interact-field-id="0">
+                                    <span class="slider round"></span>
+                                    <span style="font-weight: bold;">Volitelná personalizace - {$kastomi["settings"]["Název textového pole"]}</span>
+                                </label>
+
+                                <br style="clear: both;" />
+                                {/if}
+
+                                <div class="kastomizace-{$kastomi['id']}" {if $kastomi['required'] == 0}style="display: none;"{/if}>
+                                {* kastomizace na produktu *}
+
+                                    <div class="kastomizace" data-kastomizace-id="{$kastomi['id']}">
+
+                                        {if $kastomi['internal'] == 'special_ponozkator_etiketa'}
+
+                                            {foreach $soubory_etiketa as $soubor}
+                                                {var $cesta_etiketa = $soubor}
+                                            {/foreach}
+                                            {include 'kastomi/etiketa_ponozkator.latte', cesta_etiketa => $cesta_etiketa, kastomi => $kastomi}
+
+                                        {else}
+                                            <span><b> {$kastomi["settings"]["Název textového pole"]}:</b></span>
+
+                                        <input type="text" class="kastomizace-input" data-cena-kastomizace="{if $kastomi['settings']['Cena'] !== '0'}{$kastomi['settings']['Cena']}{else}0{/if}" data-kastomizace-id="{$kastomi['id']}" name="kastomi[{$kastomi['id']}]" oninput="checkLengthAndPattern(this)"  onblur="checkLengthAndPattern(this)" placeholder="{if isset($kastomi['settings']['Top 3 - %'])}27,NOVÁK{/if}" maxlength="{if isset($kastomi["settings"]["Maximální počet znaků"])}{$kastomi["settings"]["Maximální počet znaků"]}{else}9999{/if}"        pattern="{if isset($kastomi['settings']['Kontrola textového pole'])}{$kastomi['settings']['Kontrola textového pole']}{else}.*{/if}"
+ />
+
+                                        <br />
+
+                                                <br>
+                                                <p n:if="$kastomi['settings']['Cena'] == '0'" class="small light">Personalizace je již v ceně produktu</p>
+                                                <p n:if="$kastomi['settings']['Cena'] !== '0'" id="custom-price-print" style="display: block; margin: 10px 0" class="small light">Cena této personalizace: {$kastomi['settings']['Cena']} Kč</p>
+                                        {if $kastomi['required'] == 1}<span style="font-size: 80%">* produkt není možné dodat bez této personalizace</span><br />{/if}
+
+                                {if $kastomi['internal'] == "on_product"}
+                                    <span style="font-size: 80%">* personalizace se ukazuje na náhledu produktu po zadání textu</span>
+                                        {/if}
+
+                                        {if isset($kastomi['settings']['Obrázek pro kastomizaci'])}
+                                        Zde uvidíte po zadání textu náhled personalizace.
+                                            <div class="nahled_kastomizace" data-kastomizace-id="{$kastomi['id']}" style="position: relative; text-align: center">
+                                                <div id="kastomizace-text-{$kastomi['id']}"></div>
+                                                {* pokud mam druhe misto *}
+                                                {if isset($kastomi["settings"]["Top 2 - %"])}
+                                                    <div id="kastomizace-text2-{$kastomi['id']}"></div>
+                                                {/if}
+                                                {* pokud mam treti misto *}
+                                                {if isset($kastomi["settings"]["Top 3 - %"])}
+                                                    <div id="kastomizace-text3-{$kastomi['id']}"></div>
+                                                {/if}
+                                                {* pokud mam ctvrté misto *}
+                                                {if isset($kastomi["settings"]["Top 4 - %"])}
+                                                    <div id="kastomizace-text4-{$kastomi['id']}"></div>
+                                                {/if}
+                                                <img src="https://cdn.kastomi.com/files/{$kastomi['settings']['Obrázek pro kastomizaci']}" style="width: 62%" />
+                                            </div>
+                                        {/if}
+                                    {/if}
+                                    </div>
+
+                                    <br><br>
+
+
+                            {* pokud se ma kastomizace ukazovat na produktu *}
+                            {if $kastomi['internal'] == "on_product" || $kastomi['internal'] == "on_kastpic"}
+
+                                <style>
+                                    #kastomizace-text-{$kastomi['id']} {
+                                        position: absolute;
+                                        top: {php print $kastomi["settings"]["Top - %"]}%;
+                                        left: {php print $kastomi["settings"]["Left - %"]}%;
+                                        transform: translate(-{php print $kastomi["settings"]["Left - %"]}%, 0%);
+                                        font-size: {php print $kastomi["settings"]["Velikost fontu"]}px;
+                                        font-weight: {php print $kastomi["settings"]["Font weight"]};
+                                        text-align: center;
+                                        color: {php print $kastomi["settings"]["Barva"]};
+                                        font-family: "{php print $kastomi["settings"]["Font"]}";
+                                        {* width: {php print $kastomi["settings"]["Maximální počet znaků"]}ch; *}
+                                    }
+                                    @media only screen and (max-width: 768px) {
+
+                                        #kastomizace-text-{$kastomi['id']} {
+                                            font-size: calc({php print $kastomi["settings"]["Velikost fontu"]}px * 0.8);
+                                        }
+                                    }
+
+                                    {* pokud mam druhe misto *}
+                                    {if isset($kastomi["settings"]["Top 2 - %"])}
+                                    #kastomizace-text2-{$kastomi['id']} {
+                                        position: absolute;
+                                        top: {php print $kastomi["settings"]["Top 2 - %"]}%;
+                                        left: {php print $kastomi["settings"]["Left 2 - %"]}%;
+                                        transform: translate(-{php print $kastomi["settings"]["Left 2 - %"]}%, 0%);
+                                        font-size: {php print $kastomi["settings"]["Velikost fontu 2"]}px;
+                                        font-weight: {php print $kastomi["settings"]["Font weight"]};
+                                        text-align: center;
+                                        color: {php print $kastomi["settings"]["Barva 2"]};
+                                        font-family: "{php print $kastomi["settings"]["Font 2"]}";
+                                        {* width: {php print $kastomi["settings"]["Maximální počet znaků"]}ch; *}
+                                    }
+                                    @media only screen and (max-width: 768px) {
+
+                                        #kastomizace-text2-{$kastomi['id']} {
+                                            font-size: calc({php print $kastomi["settings"]["Velikost fontu 2"]}px * 0.8);
+                                        }
+                                    }
+                                    {/if}
+
+    /* Third overlay */
+    {if isset($kastomi["settings"]["Top 3 - %"])}
+    #kastomizace-text3-{$kastomi['id']} {
+        position: absolute;
+        top: {php print $kastomi["settings"]["Top 3 - %"]}%;
+        left: {php print $kastomi["settings"]["Left 3 - %"]}%;
+        transform: translate(-{php print $kastomi["settings"]["Left 3 - %"]}%, 0%);
+        font-size: {php print $kastomi["settings"]["Velikost fontu 3"]}px;
+        font-weight: {php print $kastomi["settings"]["Font weight"]};
+        text-align: center;
+        color: {php print $kastomi["settings"]["Barva 3"]};
+        font-family: "{php print $kastomi["settings"]["Font 3"]}";
+        {* width: {php print $kastomi["settings"]["Maximální počet znaků"]}ch; *}
+    }
+     @media only screen and (max-width: 768px) {
+
+                                        #kastomizace-text3-{$kastomi['id']} {
+                                            font-size: calc({php print $kastomi["settings"]["Velikost fontu 3"]}px * 0.8);
+                                        }
+                                    }
+    {/if}
+    /* Fourth overlay */
+    {if isset($kastomi["settings"]["Top 4 - %"])}
+    #kastomizace-text4-{$kastomi['id']} {
+        position: absolute;
+        top: {php print $kastomi["settings"]["Top 4 - %"]}%;
+        left: {php print $kastomi["settings"]["Left 4 - %"]}%;
+        transform: translate(-{php print $kastomi["settings"]["Left 4 - %"]}%, 0%);
+        font-size: {php print $kastomi["settings"]["Velikost fontu 4"]}px;
+        color: {php print $kastomi["settings"]["Barva 4"]};
+        font-weight: {php print $kastomi["settings"]["Font weight"]};
+        text-align: center;
+        font-family: "{php print $kastomi["settings"]["Font 4"]}";
+        {if $row['id'] == '2851'}
+        
+    -webkit-text-stroke: 0.5px black;
+    {/if}
+        {* width: {php print $kastomi["settings"]["Maximální počet znaků"]}ch; *}
+    }
+     @media only screen and (max-width: 768px) {
+
+                                        #kastomizace-text4-{$kastomi['id']} {
+                                            font-size: calc({php print $kastomi["settings"]["Velikost fontu 4"]}px * 0.8);
+                                        }
+                                    }
+    {/if}
+</style>
+
+
+                            {/if}
+
+                            </div>
+                            {/foreach} {* !kastomizace *}
+
+                        </div>
+
+                        {* vseobecny predpis kvuli kastomizaci
+                        <style>
+                            @media only screen and (max-width: 768px) {
+                                .detail-product-image {
+                                    max-width: 300px
+                                }
+                            }
+                        </style> *}
+
+                                               <script>
+$(document).ready(function() {
+    $('.kastomizace-input').on('input', function () {
+        var kastomizaceId = $(this).data('kastomizace-id');
+        var text = $(this).val();
+
+        // Check if the input contains a comma
+        if (text.includes(',')) {
+            var parts = text.split(',');
+            var part1 = parts[0].trim();
+            var part2 = parts[1].trim();
+
+            // Display part1 in both overlay position 1 and position 2
+            $('#kastomizace-text-' + kastomizaceId).text(part1);  // Main overlay position (1)
+            $('#kastomizace-text2-' + kastomizaceId).text(part2); // Second overlay position (2)
+
+            // Display part2 in overlay position 3
+            $('#kastomizace-text3-' + kastomizaceId).text(part1); // Third overlay position (3)
+            $('#kastomizace-text4-' + kastomizaceId).text(part1); // Third overlay position (3)
+        } else {
+            // If no comma, display the text in the main position only
+            $('#kastomizace-text-' + kastomizaceId).text(text);
+            $('#kastomizace-text2-' + kastomizaceId).text(''); // Clear secondary if not used
+            $('#kastomizace-text3-' + kastomizaceId).text(''); // Clear tertiary if not used
+            $('#kastomizace-text4-' + kastomizaceId).text(''); // Clear tertiary if not used
+        }
+
+        // Recalculate price
+        var zakladni_cena = parseFloat($('#cena').data('cena'));
+
+        // Iterate over all customizations and add to the price if filled
+        var kastomizace_cena = 0;
+        $('.kastomizace-input').each(function() {
+            var cena = parseFloat($(this).data('cena-kastomizace'));
+            // Only add price if something is filled and price is greater than 0
+            if($(this).val() && cena > 0) {
+                kastomizace_cena += cena;
+            }
+        });
+
+        $("#cena").html(zakladni_cena + kastomizace_cena);
+    });
+});
+</script>
+
+               {* 3. vlozeni do kosiku *}
+{var $offersBulkOrder = [2911 => "https://ponozkator.cz/hromadna-objednavka/vuQ3gxs96A", 2910 => "https://ponozkator.cz/hromadna-objednavka/vuQ3gxs96A"]}
+
+<div n:if="$row['sales_offer_status_id'] == 2">
+    {ifset $offersBulkOrder[$row['id']]}
+    <b>K rezervaci:</b><br>
+        Produkt je možné si zarezervovat 
+        <a href="{$offersBulkOrder[$row['id']]}" target="_blank" style="text-decoration: underline">na tomto odkazu</a>. <br><br>
+        Po dosažení dostatečného počtu rezervací bude produkt vyroben a dodán.
+    {else}
+        Produkt není v tuto chvíli možné zakoupit.
+    {/ifset}
+</div>
+
+               </div>
+
+
+                        <div id="obal_dostupnost" style="text-align: center; border-top: 1px solid #f0f0f0; font-weight: bold; font-size: 100%; clear: both; padding: 20px 0px;">
+                            {* Unihoc ma vlastni vysvetleni *}
+                            {if $salesOfferDodavatel == 'Unihoc'}
+                                <span class="orange">
+                                                    Dodání od firmy Unihoc &nbsp;
+                                                    <span class="tooltip-container" onmouseover="showTooltip(this)" onmouseout="hideTooltip(this)">
+                                                        <i class="fa-solid fa-circle-info"></i>
+                                                        <span class="tooltiptext">Doručení trvá ve většině případů 14 prac. dní. Tuto dobu ale bohužel nejsme schopni garantovat.</span>
+                                                    </span>
+                                                </span>
+                            {else}
+                                <span id="dostupnost"><span style="font-style: italic; font-weight: normal; font-size: 80%">Pro zobrazení dostupnosti vyberte variantu.</span></span>
+                            {/if}
+
+                             <br />
+                        </div>
+
+
+                        <div id="obal_cena" style="text-align: center; border-top: 1px solid #f0f0f0; font-weight: bold; font-size: 150%; clear: both; padding: 20px 0px;">
+
+                            Cena <span data-cena="{$row['price']}" id="cena">{$row['price']}</span> Kč
+                        </div>
+
+                <div n:if="$row['sales_offer_status_id'] != 2" class="counter-col" style="justify-content: center;">
+                    <span class="minus"><img src="{$basePath}/images/minus.svg"
+                                             alt="Minus"></span>
+                    <div class="counter-number"><input name="pocet" type="text" placeholder="1" value="1" class="form-control" id="qty" />
+                        <span class="counter-unit">ks</span></div>
+                    <span class="plus" style="margin-right: 35px;"><img
+                                src="{$basePath}/images/plus.svg" alt="Plus">
+                    </span>
+                    <button id="pridat" class="hp-button" style="margin-bottom: 20px;"><span
+                                class="btn-text">Přidat do košíku</span></button>
+                    <style>
+                        #pridat:hover { background: var(--primary-color); }
+                    </style>
+
+                </div>
+
+                {* zobrazeni moznosti vetsiho odberu *}
+                <div class="discount" id="discount">
+                  <div class="discount-content">
+                    <strong>Množstevní sleva</strong>
+                    <p>Objednáváte více než 10 kusů?<br>Napište nám na <a href="mailto: info@kastomi.com" style="text-decoration: underline;">info@kastomi.com</a> a  získejte individuální nabídku.</p>
+                  </div>
+                </div>
+
+
+</div>
+
+    </div>
+</div>
+
+    </div>
+
+
+{* podpurne skripty pro fungovani stranky *}
+<script n:syntax="off">
+// Dictionary for matching regex patterns to notes
+const regexNotes = {
+    "[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+": "Pouze velká písmena.",
+    "[0-9]+": "Pouze číslice.",
+    "[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]{1}.[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+": "Jedno velké písmeno, tečka, velká písmena (př.: J.NOVÁK)",
+    ".*": "Libovolný text.",
+    "^[0-9]{1,2},[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+$": "1-2 číslice, čárka, velká písmena (př.: 27,NOVÁK)",
+    "^[0-9]{1,2},[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]{1,3}$": "1-2 číslice, čárka, 1-3 velká písmena (př.: 27,JN)"
+};
+
+function checkLengthAndPattern(element) {
+    // Retrieve the pattern and max length from the input attributes
+    const pattern = element.getAttribute("pattern");
+    const maxLength = parseInt(element.getAttribute("maxlength"), 10);
+    const value = element.value;
+
+    
+
+    // Create a regex object from the pattern
+    const regex = new RegExp(`^${pattern}$`);
+
+    // Determine if the input is valid
+    const isValid = regex.test(value) && value.length <= maxLength;
+
+    // Get or create the alert container
+    let alertContainer = document.getElementById(`alert-${element.name}`);
+    if (!alertContainer) {
+        alertContainer = document.createElement("p");
+        alertContainer.id = `alert-${element.name}`;
+        alertContainer.className = "alert alert-warning";
+        alertContainer.style.display = "none";
+        alertContainer.role = "alert";
+        alertContainer.style.marginBottom = "10px"; // Optional styling
+        alertContainer.style.fontSize = "15px"; // Optional styling
+        element.parentNode.insertBefore(alertContainer, element); // Place above the input
+    }
+
+    // Display the note based on the pattern from the dictionary
+    const note = regexNotes[pattern] || "Zadaný text není validní.";
+
+    // Show or hide the alert
+   if (!isValid) {
+        alertContainer.innerHTML = `Zadaný text neodpovídá požadovanému formátu:<br><b>${note}</b>`;
+        alertContainer.style.display = "block";
+    } else if (value === '') {
+        // If the input value is empty, hide the alert
+        alertContainer.style.display = "none";
+    } else {
+        // If the value is valid, hide the alert
+        alertContainer.style.display = "none";
+    }
+
+}
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var tab = document.getElementById('tab-1');
+        if (tab) {
+            var tabLinks = tab.getElementsByClassName('tablinks');
+            if (tabLinks.length > 0) {
+                tabLinks[0].click();
+            }
+        }
+    });
+
+        function showTooltip(element) {
+                clearTimeout(element.hideTimeout);
+                var tooltip = element.querySelector('.tooltiptext');
+                tooltip.classList.add('show');
+            }
+
+            function hideTooltip(element) {
+                var tooltip = element.querySelector('.tooltiptext');
+                element.hideTimeout = setTimeout(function() {
+                    tooltip.classList.remove('show');
+                }, 1000);
+            }
+
+
+    //--------------Bulk-order counts--------------------------
+        const quantityInputs = document.querySelectorAll('.bulk-quantity');
+        const totalPriceElement = document.getElementById('totalPrice');
+        const totalQuantityElement = document.getElementById('totalQuantity');
+        const priceElement = document.getElementById('price');
+
+        quantityInputs.forEach(input => {
+          input.addEventListener('input', updateTotalPrice);
+        });
+
+        function updateTotalPrice() {
+          let totalPrice = 0;
+          let totalQuantity = 0;
+
+          quantityInputs.forEach(input => {
+            const prices = input.getAttribute('data-prices').split(',').map(price => parseInt(price));
+            const quantity = parseInt(input.value);
+
+            if (!isNaN(quantity)) {
+              totalQuantity += quantity;
+
+              if (totalQuantity >= 30) {
+                totalPrice = prices[3] * totalQuantity;
+                priceElement.textContent = prices[3];
+              } else if (totalQuantity >= 20) {
+                totalPrice = prices[2] * totalQuantity;
+                priceElement.textContent = prices[2];
+              } else if (totalQuantity >= 10) {
+                totalPrice = prices[1] * totalQuantity;
+                priceElement.textContent = prices[1];
+              } else {
+                totalPrice = prices[0] * totalQuantity;
+                priceElement.textContent = prices[0];
+              }
+            }
+          });
+
+          totalQuantityElement.textContent = totalQuantity;
+          totalPriceElement.textContent = totalPrice;
+        }
+
+
+    //--------------Personalizace--------------------------
+
+    const overlayImage = document.getElementById('custom-overlay');
+    const overlayText = document.getElementById('custom-overlay-text');
+        const customizationContainer = document.querySelector('.customization-container');
+        const sideOptionContainer = document.getElementById('side-option-container');
+        const originalImageSource = overlayImage.src;
+
+   function toggleSwitch() {
+    
+        const toggleSwitch = document.getElementById('toggle-switch');
+                if (toggleSwitch.checked) {
+                    customizationContainer.classList.add('active');
+                } else {
+                    customizationContainer.classList.remove('active');
+                }
+            };
+
+
+                </script>
+
+
+                {* je to produkt k rezervaci *}
+                {else}
+
+                    {php $radek_rezervace = $row['reservation'][0]}
+
+                    {* je to produkt k rezervaci, ale neni dostupny *}
+                    {php $pocet_pro_rezervace_celkem = 0}
+                    {foreach $row['reservation'] as $reservation}
+                        {php $pocet_pro_rezervace_celkem += $reservation['quantity']}
+                    {/foreach}
+
+                    {* tenhle soucet nas zajima pro to, kdyz je to as total *}
+                    {php $pocet_rezervovano = 0}
+
+
+                    <table class="table" style="margin-top: 50px;">
+                        <tbody><tr>
+
+                            <th colspan="2">
+                                <div style="width: 300px;">
+                                    <p style="margin: 0; font-size: 20px; font-weight: 500; line-height: 1; color: orange;">Na objednávku</p><br>
+                                    <p style="margin: 0; font-size: 15px; line-height: 1; font-weight: normal;">Tento produkt není momentálně vyrobený. Výrobu spustíme, jakmile bude dosažen minimální počet rezervací</p><br>
+
+                                </div>
+                            </th>
+                        </tr>
+
+
+                        </tbody></table>
+
+                    <p n:if="isset($chceme) && $radek_rezervace['as_total'] == 1">Nyní rezerováno {$pocet_rezervovano}/{$pocet_pro_rezervace_celkem}</p>
+
+                <p>Zadejte počet, jaký se přejete pro různé varianty</p>
+
+               {foreach $row['reservation'] as $reservation_row}
+                   {foreach $row['variants'] as $v}
+                       {if $v['id'] == $reservation_row['sales_offer_variant_id']}
+                           {php $vv = $v}
+
+                           <input type="text" name="quantity[{$vv['id']}]" value="0" style="text-align: center" /> <label style="font-weight: bold;" for="v{$iterator->counter}">{$vv['variant']}</label>
+            <br />
+
+                       {/if}
+                   {/foreach}
+            {/foreach}
+
+
+
+                    <div class="rezervation-form">
+
+                        {if $user->isLoggedIn()}
+
+                            <button id="rezervovat" class="hp-button" style="margin: auto;"><span class="btn-text">Rezervovat</span></button>
+
+                        {else}
+                        <div style="text-align: center;">
+
+                            <p>
+                                Rezervace je nezávazná - pro rezervaci musíte být přihlášení. Pokud účet ještě nemáte, registrovat se můžete zdarma.
+                            </p>
+                            <br />
+
+                            <a n:href="uzivatelLogin" class="hp-button"><span class="btn-text">Přihlásit</span></a>
+                            <a style="margin-left: 20px;" n:href="uzivatelRegistrace" class="hp-button"><span class="btn-text">Registrovat</span></a>
+                        </div>
+                        {/if}
+
+
+                    </div>
+
+                {/if}
+
+    
+     <div class="detail-bottom" id="tab-2">
+
+        <div class="tab">
+        <p class="tab-right" id="salesOfferId" >ID {$row['id']}</p>
+            <button type="button" class="tablinks" onclick="openTab(event, 'info', 'tab-2')" id="defaultOpen-2">Popis</button>
+        {if $salesOfferSizingTable != 'nezobrazovat'}
+    {if $salesOfferDodavatel == 'Unihoc'}
+        <button type="button" class="tablinks" onclick="openTab(event, 'sizes', 'tab-2')">Tabulka velikostí</button>
+    
+    {elseif $salesOfferSizingTable}
+        <button type="button" class="tablinks" onclick="openTab(event, 'sizes', 'tab-2')">Tabulka velikostí</button>
+
+    {elseif strpos(strtolower($row['name']), "tričk") !== false && strpos(strtolower($row['name']), "dětsk") === false}
+        <button type="button" class="tablinks" onclick="openTab(event, 'sizes', 'tab-2')">Tabulka velikostí</button>
+
+    {elseif strpos(strtolower($row['name']), "tričk") !== false && strpos(strtolower($row['name']), "dětsk") !== false}
+        <button type="button" class="tablinks" onclick="openTab(event, 'sizes', 'tab-2')">Tabulka velikostí</button>
+
+    {elseif strpos(strtolower($row['name']), "mikin") !== false && strpos(strtolower($row['name']), "dětsk") === false}
+        <button type="button" class="tablinks" onclick="openTab(event, 'sizes', 'tab-2')">Tabulka velikostí</button>
+
+    {elseif strpos(strtolower($row['name']), "mikin") !== false && strpos(strtolower($row['name']), "dětsk") !== false}
+        <button type="button" class="tablinks" onclick="openTab(event, 'sizes', 'tab-2')">Tabulka velikostí</button>
+    {/if}
+{/if}
+
+
+
+        </div>
+
+          <div id="info" class="tabcontent">
+                {if isset($row['text'])} <div style="text-align: left; margin-right: auto">{$row['text']|noescape}</div>{/if}
+               <div style="padding-top: 20px; width: 100%; margin-right: auto">
+                    <h4>Další informace</h4>
+                    <table class="table" style="margin-top: 24px;">
+                        <tbody>
+
+                        {* parametry jsou primo z nabidky *}
+                        {dump $row['params']}
+                        {foreach $row['params'] as $param}
+                        <tr n:if="$param['param']['show'] == 1 && strlen($param['val']) > 0">
+                            <td><strong>{$param['param']['name']}</strong></td>
+                            <td>{vypsatParametr($param['val'])}</td>
+                        </tr>
+                        {/foreach}
+
+                        </tbody>
+                    </table>
+                </div>
+
+          </div>
+          {if $salesOfferSizingTable != 'nezobrazovat'}
+
+{if $salesChannel['internal'] == "janka-chudlikova"}
+    {if strpos(strtolower($row['name']), "tričk") !== false && strpos(strtolower($row['name']), "dětsk") === false}
+        <div id="sizes" class="tabcontent">
+            <img src="\images\Group262.svg" class="sizing-table" alt="" >
+        </div>
+    {elseif strpos(strtolower($row['name']), "tričk") !== false && strpos(strtolower($row['name']), "dětsk") !== false}
+        <div id="sizes" class="tabcontent">
+            <img src="\images\sizingtable-tshirt-kids.svg" class="sizing-table" alt="" >
+        </div>
+    {elseif strpos(strtolower($row['name']), "mikin") !== false && strpos(strtolower($row['name']), "dětsk") === false}
+        <div id="sizes" class="tabcontent">
+            <img src="\images\Group263.svg" class="sizing-table" alt="" >
+        </div>
+    {elseif strpos(strtolower($row['name']), "mikin") !== false && strpos(strtolower($row['name']), "dětsk") !== false}
+        <div id="sizes" class="tabcontent">
+            <img src="\images\sizingtable-hoodie-kids.svg" class="sizing-table" alt="" >
+        </div>
+    {/if}
+{else}
+{if $salesOfferDodavatel == 'Unihoc'}
+    <div id="sizes" class="tabcontent">
+                <img src="\images\Unihoc_velikostni_tabulka_vse.png" class="sizing-table" alt="" >
+            </div>
+
+            {elseif $salesOfferSizingTable}
+        <div id="sizes" class="tabcontent">
+                    <img src="https://cdn.kastomi.com/files/{$salesOfferSizingTable}" class="sizing-table" alt="" >
+                </div>
+       {elseif $salesOfferSizingTable == 'none'}
+    <div id="sizes" class="tabcontent" style="display: none">
+                <img src="https://cdn.kastomi.com/files/{$salesOfferSizingTable}" class="sizing-table" alt="" >
+            </div>
+       {elseif strpos(strtolower($row['name']), "tričk") !== false && strpos(strtolower($row['name']), "dětsk") === false}
+            <div id="sizes" class="tabcontent">
+                <img src="\images\sizingtable-tshirt-both.svg" class="sizing-table" alt="" >
+            </div>
+        {elseif strpos(strtolower($row['name']), "tričk") !== false && strpos(strtolower($row['name']), "dětsk") !== false}
+            <div id="sizes" class="tabcontent">
+                <img src="\images\sizingtable-tshirt-kids.svg" class="sizing-table" alt="" >
+            </div>
+        {elseif strpos(strtolower($row['name']), "mikin") !== false && strpos(strtolower($row['name']), "dětsk") === false}
+            <div id="sizes" class="tabcontent">
+                <img src="\images\sizingtable-hoodie-both.svg" class="sizing-table" alt="" >
+            </div>
+        {elseif strpos(strtolower($row['name']), "mikin") !== false && strpos(strtolower($row['name']), "dětsk") !== false}
+            <div id="sizes" class="tabcontent">
+                <img src="\images\sizingtable-hoodie-kids.svg" class="sizing-table" alt="" >
+            </div>
+        {/if}
+{/if}
+{/if}
+
+
+        </div>
+
+</div>
+    </div>
+    </div>
+
+    <input type="hidden" name="sales_offer_variant_id" value="sales_offer_variant_id" />
+
+    {if $row['sales_offer_status_id'] != 2}</form>{/if}
+<script>
+$("#pridat").click(function(e) {
+
+        e.preventDefault();
+
+            var chyba = false;
+
+            if(selectedVariantId === false) {
+                var chyby_text = "Vyberte si prosím parametry produktu."+"\r";
+                var chyba = true;
+            } else {
+
+                // propsat do formulare pro odeslani
+                $('input[name="sales_offer_variant_id"]').val(selectedVariantId);
+
+            }
+
+
+            {* kontroly pro Kastomi *}
+            {foreach $row['kastomi'] as $kastomi}
+            {if $kastomi['required'] == 1}
+                var kastomizaceInput = $('input[name="kastomi[{$kastomi['id']}]"]');
+                if (kastomizaceInput.val() === '') {
+                    chyby_text = "Personalizace je povinná, ale nebyla vyplněna hodnota." + "\r";
+                    chyba = true;
+                }
+            {/if}
+
+
+            {/foreach}
+
+
+            if(chyba == true) {
+
+                alert(chyby_text);
+                return false;
+
+            } else {
+
+                //alert("testovani - neposilam, ale vse mam");
+                //return false; // PRO TESTOVANI - MUSI PRYC
+
+                // realne odeslat
+                $("#form_pridat").submit();
+
+            }
+
+        });
+
+
+jQuery(function(){
+
+var addInput = '#qty'; 
+var n = 1;
+
+var discount = document.getElementById("discount")
+
+
+$(addInput).val(n);
+
+$(addInput).on('change', function(){
+  if ($(addInput).val()> 4 ) {
+      discount.classList.add("open");
+   }
+   else{
+      discount.classList.remove("open")
+   }
+  });
+
+$('.plus').on('click', function(){
+    $(addInput).val(++n);
+    if (n > 4) {
+      discount.classList.add("open");
+   }
+})
+
+$('.minus').on('click', function(){
+    
+    if (n >= 2) {
+        $(addInput).val(--n);
+    } else {
+    }
+    if (n <= 4) {
+      discount.classList.remove("open");
+   }
+});
+
+
+});
+
+        function openTab(evt, tab, tabId) {
+            tabId = document.getElementById(tabId);
+
+            var i, tabcontent, tablinks;
+            tabcontent = tabId.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = tabId.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tab).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            }
+
+        
+        // Get the element with id="defaultOpen" and click on it
+        document.querySelectorAll('[id^="defaultOpen-"]').forEach(element => {
+          element.click();
+        });
+    $( document ).ready(function() {
+
+ 
+
+        {if isset($_GET['uv'])}
+            $(".custom_input").val({$_GET['uv']});
+        $(".slider").click();
+            $(".custom_input").focus();
+
+        {/if}
+
+
+        // rezervace
+        $("#rezervovat").click(function() {
+
+            // zkontrolovat
+            var chyba = false;
+
+            if(chyba == true) {
+
+                alert(chyby_text);
+                return false;
+
+            } else {
+
+                // odeslat formular
+                $("#form_pridat").submit();
+
+            }
+
+        });
+
+    });
+       
+
+</script>
+
+{* nahled z Boba *}
+{if isset($_GET['uv'])}
+    <style>
+        .ts-header { display: none; }
+        .container .row:first-of-type {
+            display: none;
+        }
+        .container {
+            padding-top: 0px;
+        }
+    </style>
+{/if}
+
+{* rekonstrukce 10/24 *}
+<style>
+ .sales-offer-div .tabcontent {
+    border-radius: 15px !important;
+    margin: 0 !important;
+}
+
+.parametr {
+    border: 2px solid #000;
+    padding: 10px;
+    margin: 10px 4px;
+    border-radius: 10px;
+    float: left;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s; /* Added transition for hover effects */
+}
+
+.parametr:hover {
+    background: black;
+    color: white;
+}
+
+.parametr:hover i,
+.parametr:hover img, .zvoleny_parametr img {
+    color: white;
+    filter: grayscale(1) invert(1);
+}
+
+#obal_kosik {
+    display: block;
+}
+
+.parametr_aktivni {
+    background: white;
+    color: black;
+    border-color: black;
+    pointer-events: auto;
+    opacity: 1.0;
+}
+
+.parametr_neaktivni {
+    background: #f0f0f0;
+    color: grey;
+    border-color: grey;
+    pointer-events: none;
+    opacity: 0.3;
+}
+.parametr_barva.parametr_neaktivni{
+   background: repeating-linear-gradient(
+  45deg,
+  #888888,      /* Light gray */
+  #888888 10px,
+  #666666 10px, /* Darker gray */
+  #666666 20px
+) !important;
+}
+.ikona-pohlavi {
+    height: 24px;
+}
+
+.parametr_barva {
+    width: 40px;
+    height: 40px;
+    position: relative; /* Keeps the original colors unaffected by filters */
+}
+
+.zvoleny_parametr {
+    background: black;
+    color: white;
+    transform: translateY(-10px);
+    transition: all 0.4s ease-in-out;
+}
+
+.zvoleny_parametr::after {
+    content: '';
+    width: 100%;
+    height: 2px;
+    background: #000;
+    position: absolute;
+    bottom: -15px;
+    left: 0;
+}
+
+#zrusitFiltry {
+    display: none;
+    margin-top: 6px;
+    border-radius: 10px;
+}
+
+
+</style>

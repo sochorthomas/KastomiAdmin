@@ -316,7 +316,9 @@ serve(async (req) => {
             wholesale_price: item.wholesale_price,
             sales_offer_name: item.name,
             created_at: v.created || item.created,
-            updated_at: v.updated || item.updated
+            updated_at: v.updated || item.updated,
+            // Include variant params for filtering
+            params: v.params || []
           }
         }) : [{
           // Single variant created from offer - still check for variant images by tag
@@ -333,7 +335,9 @@ serve(async (req) => {
           wholesale_price: item.wholesale_price,
           sales_offer_name: item.name,
           created_at: item.created,
-          updated_at: item.updated
+          updated_at: item.updated,
+          // Include params from the main item if no variants
+          params: item.params || []
         }]
       
       return {
@@ -347,7 +351,11 @@ serve(async (req) => {
         active_channel: item.active_channel,
         active: item.active,
         sales_offer_status_id: item.sales_offer_status_id,
-        variants: variants
+        variants: variants,
+        // Include raw kategorie field if it exists (like PHP version)
+        kategorie: item.kategorie || [],
+        // Also include params if they exist
+        params: item.params || []
       }
     })
 
@@ -387,6 +395,10 @@ serve(async (req) => {
       active_channel: activeChannel,
       active: active,
       sales_offer_status_id: offer.sales_offer_status_id || 1,
+      // Include categories as 'kategorie' to match PHP structure
+      kategorie: offer.kategorie || [],
+      // Also include params for additional data
+      params: offer.params || [],
       // Add price_range for compatibility
       price_range: {
         min: finalPrice,
@@ -409,7 +421,9 @@ serve(async (req) => {
         active: active, // Use the numeric active value
         active_channel: activeChannel,
         created_at: v.created_at,
-        updated_at: v.updated_at
+        updated_at: v.updated_at,
+        // Include params for filtering
+        params: v.params || []
       })),
       // Calculate totals from variants
       total_stock: offer.variants.reduce((sum, v) => sum + (v.stock || 0), 0),

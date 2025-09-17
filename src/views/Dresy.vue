@@ -1,52 +1,16 @@
 <template>
   <div class="dresy-container">
-    <!-- Header Stats -->
-    <div class="stats-row" v-if="!loading && jerseyOrders.length > 0">
-      <div class="stat-card-mini">
-        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #0084ff 0%, #1e3a8a 100%);">
-          <i class="pi pi-shopping-cart"></i>
-        </div>
-        <div class="stat-mini-content">
-          <div class="stat-mini-value">{{ jerseyOrders.length }}</div>
-          <div class="stat-mini-label">Objednávek</div>
-        </div>
-      </div>
-      <div class="stat-card-mini">
-        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">
-          <i class="pi pi-check-circle"></i>
-        </div>
-        <div class="stat-mini-content">
-          <div class="stat-mini-value">{{ paidOrdersCount }}</div>
-          <div class="stat-mini-label">Zaplacených</div>
-        </div>
-      </div>
-      <div class="stat-card-mini">
-        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
-          <i class="pi pi-times-circle"></i>
-        </div>
-        <div class="stat-mini-content">
-          <div class="stat-mini-value">{{ unpaidOrdersCount }}</div>
-          <div class="stat-mini-label">Nezaplacených</div>
-        </div>
-      </div>
-      <div class="stat-card-mini">
-        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
-          <i class="pi pi-box"></i>
-        </div>
-        <div class="stat-mini-content">
-          <div class="stat-mini-value">{{ totalQuantity }}</div>
-          <div class="stat-mini-label">Kusů celkem</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Content Card -->
     <Card class="jersey-card">
       <template #header>
         <div class="card-header-content">
           <div class="header-left">
             <h2 class="header-title">
-              <i class="pi pi-tag mr-2 text-primary"></i>
+              <svg class="header-icon-svg mr-2"
+                   width="20" height="20" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 1L19 3V8H16V16C16 16.2652 15.8946 16.5196 15.7071 16.7071C15.5196 16.8946 15.2652 17 15 17H5C4.73478 17 4.48043 16.8946 4.29289 16.7071C4.10536 16.5196 4 16.2652 4 16V8H1V3L7 1C7 1.79565 7.31607 2.55871 7.87868 3.12132C8.44129 3.68393 9.20435 4 10 4C10.7956 4 11.5587 3.68393 12.1213 3.12132C12.6839 2.55871 13 1.79565 13 1Z" stroke="#0084ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8.5 8H11L9.5 13" stroke="#0084ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
               Historie objednávek dresů
             </h2>
             <p class="header-subtitle text-600">
@@ -66,6 +30,41 @@
       </template>
 
       <template #content>
+        <!-- Quick Stats -->
+        <StatsRow
+          v-if="!loading && jerseyOrders.length > 0"
+          :stats="[
+            {
+              icon: 'pi pi-shopping-cart',
+              value: jerseyOrders.length,
+              label: 'Objednávek',
+              variant: 'info',
+              format: 'number'
+            },
+            {
+              icon: 'pi pi-check-circle',
+              value: paidOrdersCount,
+              label: 'Zaplacených',
+              variant: 'success',
+              format: 'number'
+            },
+            {
+              icon: 'pi pi-times-circle',
+              value: unpaidOrdersCount,
+              label: 'Nezaplacených',
+              variant: 'danger',
+              format: 'number'
+            },
+            {
+              icon: 'pi pi-box',
+              value: totalQuantity,
+              label: 'Kusů celkem',
+              variant: 'warning',
+              format: 'number'
+            }
+          ]"
+        />
+
         <!-- Loading State -->
         <div v-if="loading" class="flex justify-content-center align-items-center p-5">
           <ProgressSpinner />
@@ -94,50 +93,59 @@
           <p class="text-500">Zatím nebyly nalezeny žádné objednávky dresů.</p>
         </div>
 
-        <!-- Data Table -->
-        <DataTable 
-          v-else
-          :value="jerseyOrders" 
-          :paginator="true" 
-          :rows="20"
-          :rowsPerPageOptions="[10, 20, 50, 100]"
-          paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-          currentPageReportTemplate="Zobrazeno {first} až {last} z {totalRecords} objednávek"
-          responsiveLayout="scroll"
-          :globalFilterFields="['Jméno', 'Příjmení', 'Email', 'Název položky', 'Kastomizace']"
-          v-model:filters="filters"
-          filterDisplay="row"
-          class="modern-table"
-          stripedRows
-          :rowHover="true"
-        >
-          <!-- Global Filter -->
+        <!-- Data Table with dual scroll -->
+        <div v-else class="table-with-dual-scroll">
+          <!-- DataTable -->
+          <DataTableWithScroll
+            :value="jerseyOrders"
+            :paginator="true"
+            :rows="100"
+            :rowsPerPageOptions="[50, 100, 500, 1000]"
+            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+            currentPageReportTemplate="Zobrazeno {first} až {last} z {totalRecords} objednávek"
+            responsiveLayout="scroll"
+            v-model:filters="filters"
+            filterDisplay="row"
+            class="modern-table"
+            stripedRows
+            :rowHover="true"
+            ref="dataTableRef"
+          >
+          <!-- Header -->
           <template #header>
             <div class="flex justify-content-between align-items-center">
               <span class="text-600">
                 <i class="pi pi-info-circle mr-2"></i>
                 Celkem {{ jerseyOrders.length }} objednávek
               </span>
-              <span class="p-input-icon-left">
-                <i class="pi pi-search" />
-                <InputText 
-                  v-model="filters['global'].value" 
-                  placeholder="Vyhledat..." 
-                  class="w-20rem"
-                />
-              </span>
             </div>
           </template>
 
           <!-- ID Column -->
-          <Column field="ID" header="ID" :sortable="true" style="width: 80px">
+          <Column field="ID" header="ID" :sortable="true" style="width: 80px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Hledat ID..."
+                class="p-column-filter"
+              />
+            </template>
             <template #body="slotProps">
               <span class="order-id">#{{ slotProps.data.ID }}</span>
             </template>
           </Column>
 
           <!-- Date Column -->
-          <Column field="Datum" header="Datum" :sortable="true" style="width: 150px">
+          <Column field="Datum" header="Datum" :sortable="true" style="width: 150px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Hledat datum..."
+                class="p-column-filter"
+              />
+            </template>
             <template #body="slotProps">
               <div class="date-cell">
                 <div class="date-main">{{ formatDate(slotProps.data.Datum) }}</div>
@@ -146,9 +154,20 @@
           </Column>
 
           <!-- Paid Status Column -->
-          <Column field="Zaplaceno" header="Zaplaceno" :sortable="true" style="width: 100px">
+          <Column field="Zaplaceno" header="Zaplaceno" :sortable="true" style="width: 100px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <Select
+                v-model="filterModel.value"
+                @change="filterCallback()"
+                :options="[{label: 'ANO', value: 1}, {label: 'NE', value: 0}]"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Vybrat..."
+                class="p-column-filter"
+              />
+            </template>
             <template #body="slotProps">
-              <Tag 
+              <Tag
                 :severity="slotProps.data.Zaplaceno === 1 ? 'success' : 'danger'"
                 :value="slotProps.data.Zaplaceno === 1 ? 'ANO' : 'NE'"
                 :icon="slotProps.data.Zaplaceno === 1 ? 'pi pi-check' : 'pi pi-times'"
@@ -158,77 +177,153 @@
           </Column>
 
           <!-- Product Name Column -->
-          <Column field="Název položky" header="Položka" :sortable="true">
+          <Column field="Název položky" header="Položka" :sortable="true" style="min-width: 250px; max-width: 350px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                type="text"
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Hledat položku..."
+                class="p-column-filter"
+              />
+            </template>
             <template #body="slotProps">
-              <span class="product-name">{{ slotProps.data['Název položky'] }}</span>
+              <div class="product-info">
+                <div class="product-name" v-tooltip.top="slotProps.data['Název položky']">
+                  {{ formatProductName(slotProps.data['Název položky']) }}
+                </div>
+                <div v-if="getProductVariant(slotProps.data['Název položky'])" class="product-variant">
+                  {{ getProductVariant(slotProps.data['Název položky']) }}
+                </div>
+              </div>
             </template>
           </Column>
 
           <!-- Variant/Size Column -->
-          <Column field="Varianta/Velikost" header="Velikost" :sortable="true" style="width: 100px">
+          <Column field="Varianta/Velikost" header="Velikost" :sortable="true" style="width: 100px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Velikost..."
+                class="p-column-filter"
+              />
+            </template>
             <template #body="slotProps">
               <Badge :value="slotProps.data['Varianta/Velikost'] || '-'" severity="secondary" class="size-badge" />
             </template>
           </Column>
 
           <!-- Customization Column -->
-          <Column field="Kastomizace" header="Kastomizace" style="width: 180px">
+          <Column field="Kastomizace" header="Kastomizace" style="width: 180px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Hledat kastomizaci..."
+                class="p-column-filter"
+              />
+            </template>
             <template #body="slotProps">
-              <span class="customization-text">{{ extractCustomization(slotProps.data.Kastomizace) || '-' }}</span>
+              <span class="customization-text">{{ slotProps.data.Kastomizace || '-' }}</span>
             </template>
           </Column>
 
           <!-- Quantity Column -->
-          <Column field="Počet" header="Počet" :sortable="true" style="width: 80px">
+          <Column field="Počet" header="Počet" :sortable="true" style="width: 80px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Počet..."
+                class="p-column-filter"
+                type="number"
+              />
+            </template>
             <template #body="slotProps">
               <Badge :value="`${slotProps.data.Počet} ks`" severity="secondary" class="items-badge" />
             </template>
           </Column>
 
           <!-- Customer Name -->
-          <Column header="Zákazník" style="width: 200px">
+          <Column header="Zákazník" style="min-width: 180px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <div class="customer-filters">
+                <InputText
+                  v-model="filters['Jméno'].value"
+                  @input="filterCallback()"
+                  placeholder="Jméno..."
+                  class="p-column-filter customer-filter-input"
+                />
+                <InputText
+                  v-model="filters['Příjmení'].value"
+                  @input="filterCallback()"
+                  placeholder="Příjmení..."
+                  class="p-column-filter customer-filter-input"
+                />
+                <InputText
+                  v-model="filters['Email'].value"
+                  @input="filterCallback()"
+                  placeholder="Email..."
+                  class="p-column-filter customer-filter-input"
+                />
+              </div>
+            </template>
             <template #body="slotProps">
               <div class="customer-info">
                 <div class="customer-name">{{ slotProps.data.Jméno }} {{ slotProps.data.Příjmení }}</div>
-                <div class="customer-email">
+                <div class="customer-contact">
                   <i class="pi pi-envelope"></i>
-                  {{ slotProps.data.Email }}
+                  <span class="customer-email">{{ slotProps.data.Email }}</span>
+                </div>
+                <div v-if="slotProps.data.Telefon" class="customer-contact">
+                  <i class="pi pi-phone"></i>
+                  <span class="customer-phone">{{ formatPhone(slotProps.data.Telefon) }}</span>
                 </div>
               </div>
             </template>
           </Column>
 
-          <!-- Phone Column -->
-          <Column field="Telefon" header="Telefon" style="width: 120px">
-            <template #body="slotProps">
-              <span class="phone-number">{{ formatPhone(slotProps.data.Telefon) }}</span>
-            </template>
-          </Column>
-
-          <!-- Delivery Column -->
-          <Column field="Doprava" header="Doprava" style="width: 150px">
-            <template #body="slotProps">
-              <span class="text-sm">{{ slotProps.data.Doprava || '-' }}</span>
-            </template>
-          </Column>
-
           <!-- Address Column -->
-          <Column field="Adresa" header="Adresa">
+          <Column field="Adresa" header="Doručení" style="min-width: 200px" :showFilterMenu="false">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Hledat adresu..."
+                class="p-column-filter"
+              />
+            </template>
             <template #body="slotProps">
-              <span class="text-sm">{{ slotProps.data.Adresa || '-' }}</span>
+              <div class="delivery-info">
+                <div class="address-info" v-if="slotProps.data.Adresa">
+                  <div class="address-street">{{ getAddressStreet(slotProps.data.Adresa) }}</div>
+                  <div class="address-city">{{ getAddressCity(slotProps.data.Adresa) }}</div>
+                </div>
+                <div v-if="slotProps.data.Doprava" class="delivery-method">
+                  <i class="pi pi-truck text-xs"></i>
+                  <span>{{ slotProps.data.Doprava }}</span>
+                </div>
+              </div>
             </template>
           </Column>
-        </DataTable>
+          </DataTableWithScroll>
+        </div>
       </template>
     </Card>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/lib/supabase'
+import { FilterMatchMode } from '@primevue/core/api'
+import Select from 'primevue/select'
+import InputText from 'primevue/inputtext'
+import StatsRow from '@/components/StatsRow.vue'
+import DataTableWithScroll from '@/components/DataTableWithScroll.vue'
 
 const authStore = useAuthStore()
 const toast = useToast()
@@ -240,7 +335,17 @@ const jerseyOrders = ref([])
 
 // Filters
 const filters = ref({
-  global: { value: null, matchMode: 'contains' }
+  'ID': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Datum': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Název položky': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Varianta/Velikost': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Kastomizace': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Počet': { value: null, matchMode: FilterMatchMode.EQUALS },
+  'Jméno': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Příjmení': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Email': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Adresa': { value: null, matchMode: FilterMatchMode.CONTAINS },
+  'Zaplaceno': { value: null, matchMode: FilterMatchMode.EQUALS }
 })
 
 // Computed
@@ -257,6 +362,7 @@ const totalQuantity = computed(() => {
 })
 
 // Methods
+
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
@@ -293,46 +399,141 @@ const formatPhone = (phone) => {
 
 const extractCustomization = (text) => {
   if (!text) return ''
-  
-  const match = text.match(/"([^"]+)"\s*;?\s*\}\}/)
+
+  // Try to extract the value from JSON-like format
+  // Example: {"customization":"Name 10"}}
+  const match = text.match(/"customization"\s*:\s*"([^"]+)"/)
   if (match) {
-    const inside = match[1].split(':"').pop().replace(/"}$/, '')
+    return match[1]
+  }
+
+  // Fallback: try older format
+  const oldMatch = text.match(/"([^"]+)"\s*;?\s*\}\}/)
+  if (oldMatch) {
+    const inside = oldMatch[1].split(':"').pop().replace(/"}$/, '')
     return inside
   }
-  
+
+  // If it's already clean text, return as is
   return text
+}
+
+const formatProductName = (name) => {
+  if (!name) return '-'
+
+  // Extract main product name (before " - ")
+  const parts = name.split(' - ')
+  return parts[0] || name
+}
+
+const getProductVariant = (name) => {
+  if (!name) return ''
+
+  // Extract variant info (after first " - ")
+  const parts = name.split(' - ')
+  if (parts.length > 1) {
+    // Remove "+ kastomizace" from the variant text
+    return parts.slice(1).join(' - ').replace(/\s*\+\s*kastomizace\s*$/i, '')
+  }
+  return ''
+}
+
+const getAddressStreet = (address) => {
+  if (!address) return ''
+
+  // Parse address: Name, Surname, City, District, Street, Street2, City2, ZIP
+  const parts = address.split(', ')
+
+  // Usually street is at index 4 or 5
+  if (parts.length >= 5) {
+    // Get unique street (remove duplicates)
+    const street1 = parts[4]
+    const street2 = parts[5]
+    if (street1 && street2 && street1 === street2) {
+      return street1
+    } else if (street1) {
+      return street1
+    }
+  }
+
+  return address.split(', ').slice(0, 3).join(', ')
+}
+
+const getAddressCity = (address) => {
+  if (!address) return ''
+
+  // Parse address: Name, Surname, City, District, Street, Street2, City2, ZIP
+  const parts = address.split(', ')
+
+  // Usually city and ZIP are at the end
+  if (parts.length >= 7) {
+    const city = parts[parts.length - 2]
+    const zip = parts[parts.length - 1]
+    return `${city}, ${zip}`
+  } else if (parts.length >= 3) {
+    return parts.slice(2, 4).join(', ')
+  }
+
+  return ''
 }
 
 const fetchJerseyData = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
-    // Get auth token
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      throw new Error('Not authenticated')
+    // Check if sales channel ID is available
+    if (!authStore.salesChannelId) {
+      console.log('Waiting for sales channel ID...')
+      // Wait a bit for the sales channel to load
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      if (!authStore.salesChannelId) {
+        throw new Error('Sales channel ID not available')
+      }
     }
+
+    // Using hardcoded "86" for testing
+    const testChannelId = "86"
+    console.log('Fetching jersey data for channel:', testChannelId)
 
     // Call the bob-report edge function with report ID 19 for jerseys
     const { data, error: funcError } = await supabase.functions.invoke('bob-report', {
       body: {
         reportId: 19,
-        value: authStore.salesChannelId
-      },
-      headers: {
-        Authorization: `Bearer ${session.access_token}`
+        value: testChannelId
       }
     })
 
+    console.log('Bob report response:', data)
+    console.log('Bob report response type:', typeof data)
+    console.log('Bob report response keys:', data ? Object.keys(data) : 'null')
+
     if (funcError) {
+      console.error('Bob report error:', funcError)
       throw funcError
     }
 
-    if (data?.data) {
-      jerseyOrders.value = data.data
-      
-      if (data.data.length === 0) {
+    // The BOB API returns the data directly in data.data
+    const reportData = data?.data || []
+
+    console.log('Report data extracted:', reportData)
+    console.log('Report data is array?:', Array.isArray(reportData))
+    console.log('Report data length:', reportData.length)
+
+    if (Array.isArray(reportData)) {
+      // Process the data to ensure all fields are properly formatted
+      jerseyOrders.value = reportData.map(order => ({
+        ...order,
+        // Ensure Zaplaceno is a number for comparison
+        Zaplaceno: Number(order.Zaplaceno) || 0,
+        // Ensure Počet is a number
+        Počet: Number(order['Počet']) || order['Počet'] || 0,
+        // Clean up Kastomizace field
+        Kastomizace: extractCustomization(order.Kastomizace || '')
+      }))
+
+      if (jerseyOrders.value.length === 0) {
         toast.add({
           severity: 'info',
           summary: 'Žádná data',
@@ -343,14 +544,13 @@ const fetchJerseyData = async () => {
         toast.add({
           severity: 'success',
           summary: 'Data načtena',
-          detail: `Načteno ${data.data.length} objednávek dresů`,
+          detail: `Načteno ${jerseyOrders.value.length} objednávek dresů`,
           life: 3000
         })
       }
-    } else if (data?.error) {
-      throw new Error(data.error)
     } else {
-      throw new Error('Failed to fetch jersey data')
+      console.log('Unexpected data structure:', data)
+      jerseyOrders.value = []
     }
   } catch (err) {
     console.error('Error fetching jersey data:', err)
@@ -369,8 +569,19 @@ const fetchJerseyData = async () => {
 
 // Lifecycle
 onMounted(() => {
-  fetchJerseyData()
+  // Only fetch if we have the sales channel ID
+  if (authStore.salesChannelId) {
+    fetchJerseyData()
+  }
 })
+
+// Watch for salesChannelId changes
+watch(() => authStore.salesChannelId, (newId) => {
+  if (newId) {
+    fetchJerseyData()
+  }
+})
+
 </script>
 
 <style scoped>
@@ -378,73 +589,26 @@ onMounted(() => {
   padding: 1rem;
 }
 
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.stat-card-mini {
-  background: white;
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e5e7eb;
-  transition: all 0.3s ease;
-}
-
-.stat-card-mini:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.stat-mini-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.25rem;
-}
-
-.stat-mini-content {
-  flex: 1;
-}
-
-.stat-mini-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-  line-height: 1;
-  margin-bottom: 0.25rem;
-}
-
-.stat-mini-label {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
 .jersey-card {
   background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.jersey-card :deep(.p-card-body) {
+  padding: 0;
+}
+
+.jersey-card :deep(.p-card-content) {
+  padding: 1.5rem;
 }
 
 .card-header-content {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -454,17 +618,26 @@ onMounted(() => {
 
 .header-title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
   display: flex;
   align-items: center;
 }
 
-.header-subtitle {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.875rem;
+.header-icon-svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
+
+.header-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Stats handled by StatsRow component */
 
 .empty-state {
   display: flex;
@@ -480,6 +653,10 @@ onMounted(() => {
   text-align: center;
 }
 
+/* Dual Scroll Container */
+/* Dual scroll is handled by DataTableWithScroll component */
+
+/* DataTable Styling */
 .modern-table :deep(.p-datatable-header) {
   background: #f9fafb;
   border: none;
@@ -518,6 +695,7 @@ onMounted(() => {
   padding: 1rem;
 }
 
+/* Table Cell Styles */
 .order-id {
   font-family: 'Monaco', 'Courier New', monospace;
   font-weight: 600;
@@ -542,10 +720,26 @@ onMounted(() => {
   padding: 0.25rem 0.5rem;
 }
 
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
 .product-name {
-  font-weight: 500;
+  font-weight: 600;
   color: #111827;
   font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.product-variant {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .size-badge {
@@ -554,7 +748,8 @@ onMounted(() => {
 
 .customization-text {
   font-size: 0.813rem;
-  color: #6b7280;
+  color: #059669;
+  font-weight: 500;
 }
 
 .customer-info {
@@ -569,7 +764,7 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
-.customer-email {
+.customer-contact {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -577,13 +772,15 @@ onMounted(() => {
   color: #6b7280;
 }
 
-.customer-email i {
+.customer-contact i {
   font-size: 0.625rem;
+  color: #9ca3af;
 }
 
-.phone-number {
-  font-size: 0.813rem;
-  color: #4b5563;
+.customer-email,
+.customer-phone {
+  font-size: 0.75rem;
+  color: #6b7280;
 }
 
 .items-badge {
@@ -591,22 +788,152 @@ onMounted(() => {
   min-width: 2.5rem;
 }
 
+.address-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.address-street {
+  font-size: 0.813rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.address-city {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.delivery-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.delivery-method {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #059669;
+  font-weight: 500;
+  background: #ecfdf5;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.delivery-method i {
+  font-size: 0.625rem;
+}
+
 @media (max-width: 768px) {
   .stats-row {
     grid-template-columns: 1fr;
   }
-  
+
   .card-header-content {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .header-right {
     width: 100%;
   }
-  
+
   .header-right .p-button {
     width: 100%;
   }
+}
+
+/* Column Filter Styles */
+.modern-table :deep(.p-column-filter) {
+  width: 100%;
+  font-size: 11px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  color: #374151;
+  min-width: 80px;
+}
+
+.modern-table :deep(.p-column-filter:focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+  outline: none;
+}
+
+.modern-table :deep(.p-column-filter::placeholder) {
+  color: #9ca3af;
+  font-size: 0.7rem;
+}
+
+/* Select component specific styling */
+.modern-table :deep(.p-select.p-column-filter) {
+  height: auto;
+  min-height: 32px;
+  font-size: 11px !important;
+}
+
+.modern-table :deep(.p-select.p-column-filter .p-select-label) {
+  font-size: 11px !important;
+  padding: 0.25rem 0.5rem;
+  color: #374151;
+}
+
+.modern-table :deep(.p-select.p-column-filter .p-select-dropdown) {
+  width: 2rem;
+  height: 100%;
+}
+
+.modern-table :deep(.p-select.p-column-filter .p-select-label-container) {
+  font-size: 11px !important;
+}
+
+.modern-table :deep(.p-select.p-column-filter span) {
+  font-size: 11px !important;
+}
+
+/* Additional aggressive selectors for Select components */
+.modern-table :deep(.p-select.p-column-filter *) {
+  font-size: 11px !important;
+}
+
+.modern-table :deep(.p-select.p-column-filter .p-select-label,
+                    .p-select.p-column-filter .p-select-placeholder,
+                    .p-select.p-column-filter .p-select-option,
+                    .p-select.p-column-filter .p-inputtext) {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+
+.modern-table :deep(th .p-select.p-column-filter) {
+  font-size: 11px !important;
+}
+
+.modern-table :deep(th .p-select.p-column-filter *) {
+  font-size: 11px !important;
+}
+
+/* Select dropdown option labels */
+.modern-table :deep(.p-select-option-label) {
+  font-size: 11px !important;
+}
+
+.modern-table :deep(.p-select-panel .p-select-option-label) {
+  font-size: 11px !important;
+}
+
+.customer-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.customer-filter-input {
+  font-size: 0.7rem !important;
+  padding: 0.2rem 0.4rem !important;
 }
 </style>

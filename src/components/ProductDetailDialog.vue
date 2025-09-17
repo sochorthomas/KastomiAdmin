@@ -150,40 +150,16 @@
                   </h3>
                   
                   <div class="price-grid">
-                    <!-- Wholesale Price -->
+                    <!-- Wholesale Price (Read-only) -->
                     <div class="price-item">
                       <div class="price-header">
                         <span class="price-label">Velkoobchodní cena</span>
-                        <button 
-                          v-if="!editingFields.wholesale_price" 
-                          @click="startEdit('wholesale_price')" 
-                          class="edit-btn-inline"
-                          title="Upravit"
-                        >
-                          <i class="fas fa-pen"></i>
-                        </button>
+                        <span class="price-readonly-badge" title="Tuto hodnotu nelze upravit">
+                          <i class="fas fa-lock"></i>
+                        </span>
                       </div>
-                      <div v-if="!editingFields.wholesale_price" class="price-value">
+                      <div class="price-value">
                         {{ formatCurrency(currentProduct?.wholesale_price) }}
-                      </div>
-                      <div v-else class="edit-field-wrapper">
-                        <input 
-                          type="number" 
-                          v-model.number="editValues.wholesale_price" 
-                          class="edit-input"
-                          step="1"
-                          min="0"
-                          @keyup.enter="saveField('wholesale_price')"
-                          @keyup.escape="cancelEdit('wholesale_price')"
-                        />
-                        <div class="edit-actions-inline">
-                          <button @click="saveField('wholesale_price')" class="save-btn-inline" title="Uložit">
-                            <i class="fas fa-check"></i>
-                          </button>
-                          <button @click="cancelEdit('wholesale_price')" class="cancel-btn-inline" title="Zrušit">
-                            <i class="fas fa-times"></i>
-                          </button>
-                        </div>
                       </div>
                     </div>
 
@@ -1278,6 +1254,20 @@ watch(() => props.product, async (newProduct) => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.price-readonly-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.price-readonly-badge i {
+  font-size: 0.875rem;
 }
 
 .price-label {

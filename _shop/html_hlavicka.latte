@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>{$salesChannel['name']} | Kastomi</title>
+    <meta name="description" content="Fanshop {$salesChannel['name']} by Kastomi">
+    <meta name="keywords" content="fanshop, {$salesChannel['name']}, kastomi">
+    <link n:if="isset($salesChannel['soubory']['favicon']['cesta'])" rel="icon" href="https://cdn.kastomi.com/{$salesChannel['soubory']['favicon']['cesta']}" type="image/png" />
+    <meta name="kastomi-shop" content="true" internal="{$salesChannel['internal']}" salesChannelName="{$salesChannel['name']}">
+
+
+    <script n:if="$salesChannel['internal'] == 'tatran-stresovice'" async src="https://www.googletagmanager.com/gtag/js?id=G-V6E901TVTB"></script>
+    <script n:if="$salesChannel['internal'] == 'tatran-stresovice'">
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-V6E901TVTB');
+    </script>
+
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.12.0/css/all.css" integrity="sha384-ekOryaXPbeCpWQNxMwSWVvQ0+1VrStoPJq54shlYhR8HzQgig1v5fas6YgOqLoKz" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{$basePath}/images/style.css">
+    <link rel="stylesheet" href="{$basePath}/images/zaklad.css">
+
+
+   
+    <style>
+        :root{
+            --primary-color: {$channel_settings['color_primary']|noescape};      /*--horní lišta, patička, hledání ve filtru--*/
+            --secondary-color: {$channel_settings['color_secondary']|noescape};     /*--ohraničení hlednání ve filtru--*/
+            --contrast-color: {if isset($salesChannel['kastomi_special_color']) && strlen($salesChannel['kastomi_special_color']) > 0}
+{$salesChannel['kastomi_special_color']|noescape}  {else}white{/if}
+        }
+        .club_header{
+            position:  relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            background: rgb(238,3,60);
+            background: radial-gradient(circle, rgba(238,3,60,1) 40%, rgba(199,2,46,1) 64%);
+            width: 100%;
+            height: 15vw;
+            max-height: 15vw;
+            margin-bottom: 0px;
+            box-shadow: rgba(17, 12, 46, 0.15) 0px 4.8px 10px 0px;
+            -webkit-transition: all 300ms; 
+    -moz-transition: all 300ms; 
+    -ms-transition: all 300ms; 
+    -o-transition: all 300ms; 
+    transition: all 300ms;  
+    }
+        .club_header-logo{
+            display: block;   /*--zobrazení loga klubu*/
+            position: relative; 
+            height: 15vw;  
+            max-height: 15vw; 
+            width: 100%;
+            max-width: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            transform-origin: top; 
+             -webkit-transition: all 300ms; 
+    -moz-transition: all 300ms; 
+    -ms-transition: all 300ms; 
+    -o-transition: all 300ms; 
+    transition: all 300ms;  
+            z-index: 9212;
+            
+        }
+        
+        .club_name{
+            display: none;                   /*--zobrazení názvu klubu*/
+        }
+    </style>
+
+
+    {if $salesChannel['internal'] == "janka-chudlikova"}
+<!-- Meta Pixel Code -->
+<script n:syntax=off>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '3791684790848428');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=3791684790848428&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+{/if}
+
+<!-- Google Tag Manager -->
+
+<script n:syntax=off>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+
+})(window,document,'script','dataLayer','GTM-KWQ6TMT');</script>
+
+<!-- End Google Tag Manager -->
+</head>
+
+<body>
+
+<div class="kastomi-top-bar">
+    <a href="mailto:info@kastomi.com">info@kastomi.com</a>
+</div>
+<header class="ts-header">
+    <div class="ts-header-container">
+        <a target="_blank" href="https://kastomi.com" style="text-decoration: none; display: flex; align-items: center; z-index: 500" ><img src="{$basePath}/images/logo-poweredby-{if isset($salesChannel['kastomi_special_color']) && strlen($salesChannel['kastomi_special_color']) > 0}
+{$salesChannel['kastomi_special_color']|noescape}
+{else}white{/if}.svg" class="ts-logo" alt="Kastomi" /></a>
+        <div class="ts-navigation">
+            <div class="ts-burger-content" id="ts-burger-content">
+
+
+                {foreach $pages as $page}
+
+                    <a n:if="$page['in_menu'] == 1 && $page['active'] == 1" href="{$basePath}/{$page['seo']}" class="ts-navbar_item">
+
+                        {$page['menu_title']?$page['menu_title']:$page['title']}<img src="{$basePath}/images/header-arrow.svg" class="ts-harrow" alt="šipka" />
+
+                    </a>
+
+                {/foreach}
+
+
+{if $salesChannel['internal'] == 'janka-chudlikova'}
+                <a href="https://www.jankachudlikova.com/"class="ts-navbar_item navbar_btn" style="border: none; margin-top: 10px;" title="Domovská stránka" target="blank"><i class="fas fa-home no-phone" style="font-size: 35px"></i><span class="phone">Domovská stránka </span><img src="https://ponozkator.cz/src/img/header-arrow.svg" class="ts-harrow "alt="šipka"></a>
+{elseif $salesChannel['internal'] == 'florbal-vitkovce'}
+                <a href="https://www.florbalvitkovice.cz/"class="ts-navbar_item navbar_btn" style="border: none; margin-top: 10px;" title="Domovská stránka" target="blank"><i class="fas fa-home no-phone" style="font-size: 35px"></i><span class="phone">Domovská stránka </span><img src="https://ponozkator.cz/src/img/header-arrow.svg" class="ts-harrow "alt="šipka"></a>
+
+{else}
+
+                <a n:href="sales" class="ts-navbar_item navbar_btn">E-shop<img src="https://ponozkator.cz/src/img/header-arrow.svg" class="ts-harrow "alt="šipka"></a>
+{/if}
+
+            </div>
+
+            <div class="ts-navbar-icons">
+
+
+                <a id="cd-cart-trigger" style="position: relative" n:href="Kastomi:kosik" title="Přejít do košíku">
+                    <div id="pocet_na_kosiku" style="position: absolute;top: 65%;
+  left: 50%; color: var(--contrast-color);
+  transform: translate(-50%, -50%);">{if isset($session['kosik_polozky'])}{php print count($session['kosik_polozky'])}{/if}</div>
+                    <img src="{$basePath}/images/shopping-bag-{if isset($salesChannel['kastomi_special_color']) && strlen($salesChannel['kastomi_special_color']) > 0}
+{$salesChannel['kastomi_special_color']|noescape}
+{else}white{/if}.svg" alt="Košík" />
+                </a>
+                <div class="ts-burger-box" >
+                    <input id="toggle" type="checkbox">
+                    <label for="toggle" class="ts-hamburger">
+                        <div class="ts-top-bun"></div>
+                        <div class="ts-meat"></div>
+                        <div class="ts-bottom-bun"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</header>
+
+<script>
+
+$(document).ready(function() {
+    var $nav = $(".ts-header");
+    var $logo = $(".club_header-logo");
+    var $clubHeader = $(".club_header");
+    var navbar = document.getElementById('ts-burger-content');
+    var sideCart = document.getElementById('cd-cart');
+    var scrolled = false;
+
+    if ($(window).width() <= 767) {
+                    $logo.attr("src", "https://cdn.kastomi.com/" + {$salesChannel['soubory']['logo']['cesta']});
+
+    }
+    $(window).on('scroll', function() {
+        scrolled = $(this).scrollTop() > $nav.height();
+        toggleScrolledClass();
+    });
+
+    $('#toggle').on('click', function() {
+        scrolled = !scrolled;
+        toggleScrolledClass();
+        navbar.classList.toggle('responsive');
+    });
+    
+    $('#cd-cart-trigger, #cd-cart').on('mouseover', function() {
+        
+        sideCart.classList.toggle('active');
+    });
+    $('#cd-cart-trigger, #cd-cart').on('mouseout', function() {
+        
+        sideCart.classList.toggle('active');
+    });
+
+    function toggleScrolledClass() {
+        if ($(window).width() > 767 && scrolled) {
+            $logo.addClass('scrolled');
+            $nav.addClass('scrolled');
+            $clubHeader.addClass('scrolled');
+            $logo.attr("src", "https://cdn.kastomi.com/" + {$salesChannel['soubory']['logo']['cesta']});
+
+        } else if (!scrolled && $logo.hasClass('scrolled') && $clubHeader.hasClass('scrolled')) {
+            $logo.removeClass('scrolled');
+            $nav.removeClass('scrolled');
+            $clubHeader.removeClass('scrolled');
+            $logo.attr("src", "https://cdn.kastomi.com/" + {$salesChannel['soubory']['header']['cesta']});
+        }
+    }
+});
+
+
+</script>
+
+<style>
+.ts-header.scrolled {
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+  transition: all 200ms linear;
+
+}
+.club_header-logo.scrolled{
+    position: fixed;
+    height: 60px !important;
+    max-height:60px !important;
+    width: auto;
+    object-fit: contain;
+    top: 15px !important;
+    -webkit-transition: all 300ms; 
+    -moz-transition: all 300ms; 
+    -ms-transition: all 300ms; 
+    -o-transition: all 300ms; 
+    transition: all 300ms;  
+}
+.club_header.scrolled{
+    margin-bottom: 30px;
+    max-height: 60px !important;
+    -webkit-transition: all 300ms; 
+    -moz-transition: all 300ms; 
+    -ms-transition: all 300ms; 
+    -o-transition: all 300ms; 
+    transition: all 300ms;  
+}
+
+
+    /*------------------Top bar--------------------------------*/
+    body{
+        font-family: 'Roboto';
+        position: relative;
+    }
+
+    .kastomi-top-bar{
+    display:none;
+    position: relative;
+    top: 0;
+    text-align: right;
+    padding: 2px 2%;
+    background: rgb(238,3,60);
+    background: radial-gradient(circle, rgba(238,3,60,1) 40%, rgba(199,2,46,1) 64%);
+}
+.kastomi-top-bar a{
+    color: var(--contrast-color);
+    text-decoration: none;
+    font-size: 0.7rem;
+}
+.kastomi-top-bar a strong{
+    font-size: 1rem;
+}
+    .ts-header{
+        display: flex;
+        background: rgb(238,3,60);  
+        background: radial-gradient(circle, rgba(238,3,60,1) 40%, rgba(199,2,46,1) 64%);
+        position: sticky;
+        top:0;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        height: 90px;
+        z-index: 9210;
+        
+        
+    }
+    .ts-header-container{
+        width: 95%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .ts-navigation{
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .ts-navbar-icons{
+        width: fit-content;
+        display: flex;
+        align-items: center;
+        height: 100%;
+        gap: 3px;
+        flex-wrap: nowrap;
+        z-index: 9900;
+    }
+    .ts-burger-content{
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: right;
+        gap: 15px;
+
+        background-color: none
+    }
+    #toggle {
+        display: none;
+    }
+
+    /**
+      Hamburger
+    **/
+    .ts-burger-box{
+        cursor: pointer;
+        position: relative;
+        width: 43px;
+        height: 43px;
+        border-radius: 50%;
+        border: 3px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap:3px;
+        display: none;
+    }
+    .ts-hamburger {
+        cursor: pointer;
+        position: absolute;
+        z-index: 5;
+        transform: scale(0.5);
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        padding: 0;
+    }
+    .ts-hamburger div {
+        width: 38px;
+        height: 7px;
+        border-radius: 3px;
+        background-color: white;
+        transition: all 0.3s ease-in-out;
+    }
+
+    #toggle:checked + .ts-hamburger .ts-top-bun {
+        transform: rotate(-45deg);
+        margin-top: 15px;
+    }
+    #toggle:checked + .ts-hamburger .ts-bottom-bun {
+        opacity: 0;
+        transform: rotate(45deg);
+    }
+    #toggle:checked + .ts-hamburger .ts-meat {
+        transform: rotate(45deg);
+        margin-top: -14px;
+    }
+
+    #toggle:checked + .ts-hamburger + .ts-nav {
+        top: 0;
+        transform: scale(1);
+    }
+
+
+    .ts-logo{
+
+        width: 100px
+    }
+    .ts-navbar_item{
+        font-size: 20px;
+        color: black;
+        font-weight: bolder;
+        text-decoration: none;
+    }
+    .ts-navbar_item:hover{
+        color: #fff;
+        text-decoration: underline;
+    }
+    .ts-dropdown {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        z-index: 1000;
+
+    }
+
+
+    .ts-dropdown-content {
+        padding: 10px;
+        border-radius: 10px;
+        display: none;
+        position: absolute;
+        min-width: 160px;
+        background-color: rgb(255, 255, 255);
+        -webkit-box-shadow: 0px 28px 115px -86px rgba(0,0,0,0.75);
+        -moz-box-shadow: 0px 28px 115px -86px rgba(0,0,0,0.75);
+        box-shadow: 0px 28px 115px -86px rgba(0,0,0,0.75);
+    }
+
+    .ts-dropdown:hover .ts-dropdown-content {
+        display: block;
+    }
+
+    .ts-harrow{
+        display: none;
+    }
+    .navbar_btn{
+        color: var(--contrast-color); 
+        border: 2px solid var(--contrast-color); 
+        border-radius: 20px; 
+        padding: 0px 8px;
+        font-weight: normal;
+    }
+    
+
+.phone{
+      display: none;
+    }
+   
+      
+    @media screen and (max-width: 1150px){
+        .ts-burger-box{
+            display: block;
+        }
+        .ts-header{
+            height: 90px;
+        }
+      
+       .phone{
+        display: block;
+      }
+        .ts-burger-content{
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            gap: 5vh;
+            margin: 0 auto;
+            width: 100%;
+            height: 1000px;
+            top: 90px;
+            left:0;
+            right: 0;
+            overflow-y: scroll;
+            z-index: 100;
+            padding-top: 30px;
+            background-color: white;
+        }
+        .ts-navbar-icons{
+            z-index: 9000;
+        }
+        .ts-harrow{
+            display: block;
+        }
+        .ts-navbar_item{
+            display: flex;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            align-items: center;
+            justify-content: space-between;
+            width: 90%;
+            margin: 10px auto;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.048);
+            color: black
+        }
+
+        .ts-dropdown-content{
+            display: block;
+            position: relative;
+            margin: 0 0 45px 50px;
+        }
+        .ts-dropdown-content .ts-navbar_item{
+            position: absolute;
+            font-weight: 500;
+            padding: 0%;
+        }
+
+        .ts-navbar_item:last-child{
+            border: none;
+        }
+        #dropdownArrow{
+            display: none;
+        }
+        .ts-logo{
+            width: 90px;
+        }
+        .ts-burger-content.responsive {
+            display: block;
+            z-index: 9000  ;
+
+        }
+        .navbar_btn{
+            border: none
+        }
+        .club_header-logo.scrolled{
+            height: 70px !important;
+            max-height:70px !important;
+            top: 15px !important
+        }
+    }
+@media only screen and (max-width: 867px) {
+        .club_header-logo{
+            position: fixed;
+            height: 60px !important;
+            max-height:60px !important;
+            width: auto !important;
+            object-fit: contain;
+            top: 15px !important;
+            -webkit-transition: all 300ms; 
+            -moz-transition: all 300ms; 
+            -ms-transition: all 300ms; 
+            -o-transition: all 300ms; 
+            transition: all 300ms; 
+        }
+        .club_header{
+            top: -70px;
+            margin-bottom: 0px;
+            max-height: 70px !important;
+            -webkit-transition: all 300ms; 
+            -moz-transition: all 300ms; 
+            -ms-transition: all 300ms; 
+            -o-transition: all 300ms; 
+            transition: all 300ms;  
+        }
+
+}
+    
+    .dark-mode {
+        background-color: rgb(59, 59, 59) !important;
+        color: white !important;
+    }
+    .dark-mode-secondary{
+        background-color: rgb(112, 112, 112) !important;
+        border: rgb(112, 112, 112);
+        color: #ffffff !important;
+    }
+
+</style>
+
+<script>
+    function iniFrame() {
+        if ( window.location !== window.parent.location )
+        {
+
+            document.body.setAttribute("id", "in_iframe");
+
+        }
+        else {
+
+        }
+    }
+
+    // Calling iniFrame function
+    iniFrame();
+</script>
+
+{* v iframe neukazovat klubove logo *}
+<style>
+    #in_iframe .club_header {
+        display: none;
+        
+    }
+    #in_iframe .ts-header {
+  box-shadow: rgba(17, 12, 46, 0.15) 0px 4.8px 10px 0px;
+  transition: all 200ms linear;
+}
+    #in_iframe .club_header img{
+    position: fixed;
+    height:60px !important;
+    top: 15px;
+    transition: all 150ms linear;
+}
+</style>
+
+
+  {if $salesChannel['internal'] == 'danceway'}
+  <div>
+    <div class="video-container" style='box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;'>
+    <video autoplay muted loop id="video" class="video" style="width: 100%; display: block">
+        <source id="mp4" src="https://cdn.kastomi.com/files/DANCEWAY%20RESIZE%20PROMO%201910X210_min.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+
+    </div>
+{else}
+    <div n:if="$salesChannel['internal'] !== 'kastomi-vysivky'" class="club_header">
+    
+        <a href="{link sales}">
+          
+            {if isset($salesChannel['soubory']['header']['cesta'])}
+                <img src="https://cdn.kastomi.com/{$salesChannel['soubory']['header']['cesta']}" class="club_header-logo" alt="" />
+            {else}
+                <img src="https://cdn.kastomi.com/{$salesChannel['soubory']['logo']['cesta']}"  class="club_header-logo" alt="" />
+            {/if}
+        </a>
+
+
+        <h1 class="club_name">{$salesChannel['name']}</h1>
+    </div>
+{/if}
+    <div n:foreach="$flashes as $flash" n:class="flash, $flash->type">{$flash->message|noescape}</div>
+
+
+<div id="cd-shadow-layer"></div>
+
+<div id="cd-cart"> 
+     
+                                <h3>{_'Obsah košíku:'}<br></h3><h6 ><a n:href="Kastomi:kosik" class="light">Přejít do košíku &rarr;</a></h6>
+<hr style="border-top: 1px solid black;">
+
+<div class="cd-cart-items">
+                                {snippet kosikPolozkyTop}
+                                    {var $podpora = 0}
+                                    {var $cena_kosik_celkem = 0}
+
+                                    {* obalka produkt *}
+
+                                    <div n:foreach="$session['kosik_polozky'] as $polozka" class="row pb-4">
+
+                                        {if !isset($polozka["cena_ks_velkoobchodni"])}{php $polozka['cena_ks_velkoobchodni'] = 0}{/if}
+
+                                        {php $podpora = $podpora+(($polozka['pocet'] * $polozka['cena_ks'])-($polozka['pocet'] * $polozka['cena_ks_velkoobchodni']))}
+                                        <div class="col-3">
+                                            <img src="https://cdn.kastomi.com/{$soubory[$polozka['sales_offer_id']]}" alt="" class="eshop-product-cart w-100" /> 
+                                        </div>
+                                        <div class="col col-md-3 cart_product_name"><a href="{$basePath}/nabidka/produkt/{$polozka['seo']}"><h6>{$polozka['name']}<br /><span style="font-size: 80%; font-weight: normal;">varianta:</span> {$polozka['variant']}<br /><span style="font-size: 80%; font-weight: normal;">počet:</span> {$polozka['pocet']}</h6></a>
+
+                                        </div>
+                                        
+
+                            {php $cena_celkem = ($polozka['pocet'] * $polozka['cena_ks'])}
+                            {php $cena_kosik_celkem = $cena_kosik_celkem+$cena_celkem}
+                                        
+                                    </div>
+
+                                    
+
+
+                                    
+</div>
+                                    <div class="row mt-5 cd-go-to-cart">
+                                        
+
+                                        <div class="col-9"><p>{_'Celkem'}</p></div>
+                                        <div class="col">
+                                            <div class="text-right"><p>{$cena_kosik_celkem} Kč</p></div>
+                                        </div>
+                                    </div>
+
+                                    
+                                {/snippet}
+                               
+
+    {* <h5 class="cd-go-to-cart"><a n:href="Kastomi:kosik" title="Přejít do košíku">Přejít do košíku &rarr;</a></h5> *}
+</div>
+
+
+
+<style n:if="$salesChannel['internal'] == 'jimi-rugby-club'">
+    .club_header, .ts-header {
+        background: radial-gradient(100% 4191.01% at 0% 70.32%, #ED1C24 0%, #005BAB 100%) !important;
+    }
+    
+</style>
+
+<style n:if="$salesChannel['internal'] == 'dreyer'">
+    .club_header, .ts-header {
+    background: radial-gradient(99.35% 4438.44% at 0.27% 88.92%, #DDA146 0%, #DDA146 10.94%, #F2E6C7 50.18%, #DDA146 87.5%, #DDA146 100%) !important;
+    }
+    
+</style>
+
+<style n:if="$salesChannel['internal'] == 'hazena-noveveseli-kastomi-com'">
+    .club_header, .ts-header {
+    background: radial-gradient(100.55% 4214.06% at 0% 70.32%, #01254A 0%, #094A89 54.69%, #002447 100%)
+    }
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'rugby-club-slavia-praha'">
+    .club_header, .ts-header {
+    background: linear-gradient(90.02deg, #D3393D 1.99%, #FFDCDC 49.7%, #CD2C2F 99.98%);
+    }
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'warrior-s'">
+    .club_header, .ts-header {
+    background: linear-gradient(270.49deg, #5B0007 0%, #AD1E28 100.07%);
+    
+    }
+    .ts-navbar_item{
+        color: #ffffff
+    }
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'znesnaze21'" n:syntax="off">
+    .club_header, .ts-header {
+    background: linear-gradient(90.09deg, #A090E8 0.08%, #D4CAFF 46.16%, #A090E8 98.83%);
+    
+    }
+    .ts-navbar_item{
+        color: #ffffff;
+    }
+
+</style>
+<style n:if="$salesChannel['internal'] == 'hc-kert-park-praha'" n:syntax="off">
+    .club_header, .ts-header {
+    background: radial-gradient(100.55% 4214.06% at 0% 70.32%, #1C1F59 0%, #3A57A4 50.23%, #1C1F59 100%, #1C1F59 100%)
+    }
+
+</style>
+<style n:if="$salesChannel['internal'] == 'florbal-kladno'">
+
+    .club_header, .ts-header {
+    background: radial-gradient(99.74% 4179.91% at 0% 70.32%, #0B102A 0%, #192B5B 52.08%, #0B102A 100%);
+    }
+   
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'frito'">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(89.97deg, #8F002B -1.6%, #002899 -1.6%, #0050D0 44.42%, #002899 99.97%);
+    }
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'lovci-lovosice'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: radial-gradient(4467.29% 100.03% at 0.00% 56.19%, #2B2B47 0%, #172038 0%, rgba(33, 33, 53, 0.99) 50%, #172038 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'hb-basket'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #B5D334 0%, #D3E38B 50%, #B4D236 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'rugby-club-prelouc'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #1A537C 0%, #4485B4 50%, #1C557E 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'atletico-novejsa'" n:syntax="off">
+    
+    .club_header, .ts-header {
+   background: linear-gradient(90deg, #3E46CB 0%, #828AFF 50%, #4148CD 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'sk-senomaty'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #1A99CA 0%, #82D7F9 50%, #1A99CA 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'sokol-konice'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #025503 0%, #4FB951 50%, #055403 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'fc-praha'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #630C01 0%, #871002 50%, #630C01 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'fk-vseradice'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #3A2A6D 0%, #877EA3 50%, #403172 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'fc-zlatovce'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #6FC7EA 0%, #FFF 50%, #6DC6EA 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'fc-petrzalka'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #000 0%, #575757 50%, #000 100%);
+    }
+
+
+    
+</style>
+<style n:if="$salesChannel['internal'] == 'fc-malibu'" n:syntax="off">
+    
+    .club_header, .ts-header {
+    background: linear-gradient(90deg, #520130 0%, #E10585 50%, #520231 100%);
+    }
+
+</style>
+
+<style n:if="isset($channel_settings['css'])">
+
+  {php print $channel_settings['css']}
+
+</style>

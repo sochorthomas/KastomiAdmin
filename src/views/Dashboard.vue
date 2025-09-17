@@ -429,30 +429,30 @@ onUnmounted(() => {
 .dashboard-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--content-gap);
 }
 
 /* Statistics Grid */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 /* Quick Actions Section */
 .quick-actions-section {
-  margin-top: 2rem;
-  margin-bottom: 2rem;
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
 }
 
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .section-title i {
@@ -462,17 +462,17 @@ onUnmounted(() => {
 .action-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .action-card {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 1.25rem;
+  padding: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-md);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -531,11 +531,11 @@ onUnmounted(() => {
 .stat-card {
   background: white;
   border-radius: 8px;
-  padding: 1rem;
+  padding: var(--spacing-lg);
   border: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-md);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;

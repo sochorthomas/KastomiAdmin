@@ -43,9 +43,15 @@ import Divider from 'primevue/divider'
 import Breadcrumb from 'primevue/breadcrumb'
 import Chip from 'primevue/chip'
 
+// Bootstrap CSS (needed for shop components)
+import 'bootstrap/dist/css/bootstrap.min.css'
+
 // PrimeVue CSS
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
+
+// Font Awesome (for shop icons)
+import '@fortawesome/fontawesome-free/css/all.min.css'
 
 // Global CSS
 import './assets/css/main.css'
