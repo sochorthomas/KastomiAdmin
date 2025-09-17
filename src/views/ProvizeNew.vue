@@ -16,7 +16,7 @@
               @click="fetchPayoutItems"
               :loading="loading"
               icon="pi pi-refresh"
-              severity="primary"
+              severity="secondary"
               class="refresh-button"
               v-tooltip.bottom="'Aktualizovat data'"
             />

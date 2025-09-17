@@ -18,11 +18,12 @@
             </p>
           </div>
           <div class="header-right">
-            <Button 
-              icon="pi pi-refresh" 
-              label="Obnovit" 
-              @click="fetchJerseyData" 
+            <Button
+              icon="pi pi-refresh"
+              label="Obnovit"
+              @click="fetchJerseyData"
               :loading="loading"
+              severity="secondary"
               class="p-button-sm"
             />
           </div>

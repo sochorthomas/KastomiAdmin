@@ -20,11 +20,11 @@
               class="export-button"
               v-tooltip.bottom="'Exportovat do Excelu'"
             />
-            <Button 
-              @click="fetchOrders" 
+            <Button
+              @click="fetchOrders"
               :loading="loading"
               icon="pi pi-refresh"
-              severity="primary"
+              severity="secondary"
               class="refresh-button"
               v-tooltip.bottom="'Aktualizovat data'"
             />

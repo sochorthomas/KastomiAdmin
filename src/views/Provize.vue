@@ -15,7 +15,7 @@
             <Button
               @click="showHelpModal = true"
               icon="pi pi-question-circle"
-              severity="help"
+              severity="secondary"
               class="help-button mr-2"
               v-tooltip.bottom="'Nápověda'"
               label="Nápověda"
@@ -24,7 +24,7 @@
               @click="fetchProvizeData"
               :loading="loading"
               icon="pi pi-refresh"
-              severity="primary"
+              severity="secondary"
               class="refresh-button"
               v-tooltip.bottom="'Aktualizovat data'"
             />

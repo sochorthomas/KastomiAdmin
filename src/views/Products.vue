@@ -12,20 +12,11 @@
             <p class="header-subtitle">Správa produktů a variant</p>
           </div>
           <div class="header-actions">
-            <Select 
-              v-model="activeFilter"
-              :options="activeFilterOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Všechny produkty"
-              @change="handleActiveFilterChange"
-              class="active-filter-dropdown"
-            />
-            <Button 
-              @click="fetchProducts" 
+            <Button
+              @click="fetchProducts"
               :loading="loading"
               icon="pi pi-refresh"
-              severity="primary"
+              severity="secondary"
               class="refresh-button"
               v-tooltip.bottom="'Aktualizovat data'"
             />
@@ -561,7 +552,6 @@ import { useToast } from 'primevue/usetoast'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import Chip from 'primevue/chip'
-import Select from 'primevue/select'
 import ProductDetailDialog from '@/components/ProductDetailDialog.vue'
 import StatsRow from '@/components/StatsRow.vue'
 import DataTableWithScroll from '@/components/DataTableWithScroll.vue'
@@ -599,13 +589,6 @@ const filters = ref({
   price: { value: null, matchMode: FilterMatchMode.EQUALS }
 })
 
-// Active filter state
-const activeFilter = ref(null)
-const activeFilterOptions = [
-  { label: 'Všechny produkty', value: null },
-  { label: 'Aktivní', value: true },
-  { label: 'Neaktivní', value: false }
-]
 
 // Helper functions (defined before use in computed)
 const calculateKlubPrice = (offer) => {
@@ -664,13 +647,6 @@ const activeProducts = computed(() => {
 })
 
 // Handle active filter change
-const handleActiveFilterChange = () => {
-  if (activeFilter.value === null) {
-    clearFilter('_isActive')
-  } else {
-    setFilter('_isActive', activeFilter.value)
-  }
-}
 
 // Handle sorting
 const onSort = (event) => {
@@ -931,9 +907,6 @@ watch(() => authStore.salesChannelUrl, (newUrl, oldUrl) => {
 })
 
 // Watch for filter changes to sync with dropdown
-watch(() => filters.value._isActive, (newValue) => {
-  activeFilter.value = newValue === undefined ? null : newValue
-}, { immediate: true })
 
 // Handle auto-opening product from query parameters
 const handleAutoOpenProduct = async () => {
